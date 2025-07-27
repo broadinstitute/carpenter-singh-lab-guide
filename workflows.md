@@ -80,8 +80,9 @@ This section covers creating a new project from scratch. Most team members will 
 
 ```bash
 # Create and enter project directory
-mkdir {PROJECT_NAME}
-cd {PROJECT_NAME}
+# export PROJECT_NAME=my_project
+mkdir ${PROJECT_NAME}
+cd ${PROJECT_NAME}
 
 # Initialize Git and DVC
 git init
@@ -110,7 +111,8 @@ dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
 ```bash
 # Create all directories
 mkdir -p data/{raw,external,interim,processed}
-mkdir -p {PROJECT_NAME} notebooks scripts tests
+mkdir -p ${PROJECT_NAME}
+mkdir -p notebooks scripts tests
 mkdir -p docs references
 
 # Add .gitkeep files to track empty directories
@@ -123,7 +125,7 @@ touch README.md
 
 ```bash
 # Initialize Python project
-uv init --name {PROJECT_NAME} --package
+uv init --name ${PROJECT_NAME} --package
 
 # Add core dependencies
 uv add loguru typer "dvc[s3]"
@@ -131,7 +133,7 @@ uv add awscli  # or azure-cli, google-cloud-storage
 
 # Add development dependencies
 uv add --group lint ruff pre-commit
-uv add --group test pytest pytest-cov
+uv add --group test pytest
 ```
 
 Download Python gitignore template
@@ -148,11 +150,14 @@ curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Pytho
 
 Add to your `pyproject.toml`:
 
+Note: Replace `{PROJECT_NAME}` with the actual project name
+
 ```toml
 [tool.ruff]
 line-length = 120
 src = ["{PROJECT_NAME}"]
 target-version = "py312"
+include = ["pyproject.toml", "{PROJECT_NAME}/**/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "W"]
@@ -234,6 +239,7 @@ Test it:
 dvc repro
 git add .
 git commit -m "Initial project structure with DVC pipeline"
+# pre-commit hooks might update files upon commit, so you may need to git add again
 dvc push
 ```
 
@@ -263,7 +269,7 @@ Once the repo is setup here's what someone else - or you starting over - would n
 # Clone and install
 git clone https://github.com/yourusername/{PROJECT_NAME}.git
 cd {PROJECT_NAME}
-uv sync
+uv sync --all-groups
 
 # Configure cloud storage for DVC (if using profiles)
 dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
@@ -357,13 +363,24 @@ Create/update `scripts/setup_external_data.sh`:
 
 ```bash
 #!/bin/bash
-# Reference data (→ data/external/)
-[ ! -f data/external/metadata.csv.dvc ] && \
-dvc import-url --to-remote https://example.com/metadata.csv data/external/
+# Example: Import reference metadata (→ data/external/)
+[ ! -f data/external/jump-metadata.csv.dvc ] && \
+dvc import-url --to-remote \
+    https://github.com/jump-cellpainting/datasets/raw/main/metadata/plate.csv.gz \
+    data/external/jump-metadata.csv.gz
 
-# Primary datasets (→ data/raw/)
-[ ! -f data/raw/dataset.parquet.dvc ] && \
-dvc import-url --version-aware s3://bucket/dataset.parquet data/raw/
+# Example: Import Cell Painting data via S3 (→ data/raw/)
+[ ! -f data/raw/BR00116991-A01-1-Image.csv.dvc ] && \
+dvc import-url --version-aware \
+    s3://cellpainting-gallery/cpg0000-jump-pilot/source_4/workspace/analysis/2020_11_04_CPJUMP1/BR00116991/analysis/BR00116991-A01-1/Image.csv \
+    data/raw/BR00116991-A01-1-Image.csv
+```
+
+After running the script:
+
+```bash
+# Commit the auto-staged .dvc files
+git commit -m "Add data imports"
 ```
 
 **Notes:**
@@ -443,10 +460,6 @@ dvc pull -R data/external data/interim
 
 # Daily sync
 git pull && dvc pull -R data/external data/interim
-
-# Create analysis
-jupyter notebook notebooks/
-# Save outputs to data/processed/
 
 # Share work
 dvc add data/processed/my-analysis/
