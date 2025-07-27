@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
 ## Repository Context
 
-This is a documentation repository for the Carpenter-Singh Lab at the Broad Institute. The primary purpose is to maintain and improve lab standards documentation, particularly around data science workflows using Cookiecutter Data Science (CCDS) principles.
+Documentation repository for Carpenter-Singh Lab at the Broad Institute. Maintains lab standards for data science workflows using Cookiecutter Data Science (CCDS) principles.
 
 ## Key Tasks When Working Here
 
@@ -19,12 +19,12 @@ This is a documentation repository for the Carpenter-Singh Lab at the Broad Inst
 
 When asked to update documentation:
 
-- Preserve the prescriptive, writing style outlined in the Documentation Guidelines within each markdown
+- Follow the Documentation Guidelines below
 - Focus on executable commands over explanations
 
 ### 3. Adding New Sections
 
-If adding new documentation:
+When adding new documentation:
 
 - Follow the existing markdown structure and heading hierarchy
 - Place new content in the appropriate file (workflows.md for process-related content)
@@ -49,6 +49,47 @@ carpenter-singh-lab-standards/
 
 ## When Making Changes
 
-- The workflows.md file is the authoritative source for lab procedures
-- Any new documentation should complement, not duplicate, existing content
-- Focus on making processes more clear and executable, not more flexible
+- workflows.md is the authoritative source for lab procedures
+- New documentation must complement, not duplicate, existing content
+- Make processes clear and executable, not flexible
+
+## Documentation Guidelines
+
+When updating documentation in this repository, follow these principles:
+
+### Target Audience
+
+- **Expert data scientists** who are new to the lab
+- They will be instructed to read documentation thoroughly
+- They want to understand THE way this lab operates, not explore options
+- Assume technical competence - skip basic explanations
+
+### Writing Style
+
+- **Prescriptive over descriptive**: "Do X" not "You might consider X"
+- **Dense over verbose**: One clear statement beats three explanatory paragraphs
+- **Executable over abstract**: Every process needs exact, working commands
+- **Real over generic**: Use actual filenames from real projects, not placeholders
+
+### Content Organization
+
+- **Role-based sections**: Clearly separate what analysts vs maintainers need
+- **Most-used first**: Daily workflow before one-time setup
+- **Progressive disclosure**: Core workflow in main text, edge cases in appendix
+- **Decision trees**: "If X → do Y" for any branching logic
+
+### Critical Elements to Include
+
+- **Coordination requirements**: Bold warnings when team sync is needed
+- **Order dependencies**: Explicit when sequence matters (e.g., hook installation)
+- **Known gotchas**: Document issues with specific workarounds
+- **The "why" sparingly**: Only when it affects implementation choices
+
+### What to Avoid
+
+- Beginner explanations ("Git is a version control system...")
+- Multiple options without clear guidance
+- Philosophical discussions about methodology
+- Untested command sequences
+
+Remember: Documentation should be the authoritative reference that turns an expert data scientist into an expert lab member.
