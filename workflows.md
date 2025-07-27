@@ -56,11 +56,11 @@ Example progression:
 
 **Example**: `1.03-srs-merge-annotations.py`
 
-**Within each notebook, maintain**:
+**Within each notebook**:
 
-- `input/`: Links to source data
-- `output/`: Intermediate results
-- `figures/`: Publication-ready visualizations
+- Read inputs from `data/interim/` or `data/external/`
+- Save all outputs to `data/processed/{your-analysis}/`
+- Organize outputs by type: `data/processed/{your-analysis}/figures/`, `/tables/`, etc.
 
 ## Project Setup
 
@@ -427,11 +427,11 @@ git push
 
 ### Example Projects
 
-Study these repositories to see our workflow in practice:
+Study these repositories for experiment tracking with GitHub Issues (note: these predate our current CCDS standards):
 
-- [jump-cellpainting/pilot-cpjump1-analysis](https://github.com/jump-cellpainting/pilot-cpjump1-analysis/) - Full CCDS structure
-- [broadinstitute/cell-health](https://github.com/broadinstitute/cell-health) - Notebook-focused analysis
-- [jump-cellpainting/morphmap](https://github.com/jump-cellpainting/morphmap) - Complex pipeline example
+- <https://github.com/jump-cellpainting/pilot-cpjump1-analysis/>
+- <https://github.com/broadinstitute/cell-health>
+- <https://github.com/jump-cellpainting/morphmap>
 
 ### Common Commands Reference
 
