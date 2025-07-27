@@ -142,7 +142,7 @@ curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Pytho
 
 > **Note**: DVC automatically manages `.gitignore` entries for DVC-specific files and data directories as you use them.
 
-## 5: Configure Code Quality Tools
+#### 5. Configure Code Quality Tools
 
 ### Ruff Configuration
 
@@ -357,11 +357,11 @@ Create/update `scripts/setup_external_data.sh`:
 
 ```bash
 #!/bin/bash
-# For reference data (→ data/external/)
+# Reference data (→ data/external/)
 [ ! -f data/external/metadata.csv.dvc ] && \
 dvc import-url --to-remote https://example.com/metadata.csv data/external/
 
-# For primary datasets (→ data/raw/)
+# Primary datasets (→ data/raw/)
 [ ! -f data/raw/dataset.parquet.dvc ] && \
 dvc import-url --version-aware s3://bucket/dataset.parquet data/raw/
 ```
@@ -479,6 +479,8 @@ dvc diff            # See changes
 
 ## Documentation Guidelines
 
+<details>
+
 When updating this document, follow these principles:
 
 ### Target Audience
@@ -517,3 +519,5 @@ When updating this document, follow these principles:
 - Untested command sequences
 
 Remember: This document is the authoritative reference that turns an expert data scientist into an expert lab member.
+
+</details>
