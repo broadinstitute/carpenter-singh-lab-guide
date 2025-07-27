@@ -26,37 +26,39 @@ project-name/
 └── docs/            # Documentation
 ```
 
-### Experiment Tracking with GitHub Issues
+### Experiment Tracking
 
-**Issues are our primary method for tracking experiments and discussions.**
+**Use GitHub Issues to track all experiments.**
 
-- **Title deliberately**: Start with hypothesis/question, update to conclusion when complete
-- **Paste figures and results**: Include plots and analysis snippets directly in issues
-- **Link everything**: Reference commits, notebooks, and data locations
-- **Use labels**: `experiment`, `analysis`, `results`, etc.
+1. **Create issue before starting**: Title with hypothesis or question
+2. **Document everything**: Link notebooks, paste figures, note data locations
+3. **Update title when complete**: Change from question to conclusion
+4. **Label consistently**: `experiment`, `analysis`, `results`
 
-Example issue progression:
+Example progression:
 
-1. Title: "Does batch correction improve compound clustering?"
-2. Document approach, link to notebook `03.batch-correction-analysis.ipynb`
-3. Paste key figures showing results
-4. Update title: "PCA-based batch correction improves compound clustering by 15%"
+- Initial: "Does batch correction improve compound clustering?"
+- Document approach, link `notebooks/3.01-srs-batch-correction.py`
+- Paste key figures showing results
+- Final: "PCA-based batch correction improves compound clustering by 15%"
 
-### Notebook Organization
+### Notebook Naming
 
-Notebooks follow the naming convention: `<phase>.<sequence>-<initials>-<description>.ipynb`
+**Format**: `<phase>.<sequence>-<initials>-<description>.py`
 
-- **Phase numbers**:
-    - `0`: Exploration
-    - `1`: Data cleaning/feature engineering
-    - `2`: Visualization
-    - `3`: Modeling
-    - `4`: Publication figures
-- **Example**: `1.03-srs-merge-annotations.ipynb`
+**Phase numbers**:
 
-Within each analysis module, maintain:
+- `0`: Exploration
+- `1`: Data cleaning/feature engineering
+- `2`: Visualization
+- `3`: Modeling
+- `4`: Publication figures
 
-- `input/`: Links or references to source data
+**Example**: `1.03-srs-merge-annotations.py`
+
+**Within each notebook, maintain**:
+
+- `input/`: Links to source data
 - `output/`: Intermediate results
 - `figures/`: Publication-ready visualizations
 
@@ -69,7 +71,7 @@ This section covers creating a new project from scratch. Most team members will 
 - Git
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) package manager
-- Cloud CLI tools configured (AWS CLI, Azure CLI, or gcloud)
+- Cloud CLI tools configured (typically AWS CLI)
 - Access to cloud storage for DVC remote
 
 ### Complete Setup Process
@@ -109,11 +111,12 @@ dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
 # Create all directories
 mkdir -p data/{raw,external,interim,processed}
 mkdir -p {PROJECT_NAME} notebooks scripts tests
-mkdir -p docs/docs references
+mkdir -p docs references
 
 # Add .gitkeep files to track empty directories
 touch data/{raw,external,interim,processed}/.gitkeep
 touch notebooks/.gitkeep references/.gitkeep
+touch README.md
 ```
 
 #### 4. Set Up Python Environment
@@ -131,7 +134,54 @@ uv add --group lint ruff pre-commit
 uv add --group test pytest pytest-cov
 ```
 
-#### 5. Configure Pre-commit Hooks
+Download Python gitignore template
+
+```bash
+curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
+```
+
+> **Note**: DVC automatically manages `.gitignore` entries for DVC-specific files and data directories as you use them.
+
+## 5: Configure Code Quality Tools
+
+### Ruff Configuration
+
+Add to your `pyproject.toml`:
+
+```toml
+[tool.ruff]
+line-length = 120
+src = ["{PROJECT_NAME}"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "W"]
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+```
+
+### Markdown Linting
+
+Create `.markdownlint.yaml`:
+
+```yaml
+# Markdown style configuration
+MD007:
+  indent: 4          # List indent
+MD013: false         # Line length
+MD024: false         # Multiple headers with same content
+MD029:
+  style: ordered     # Ordered list style
+MD033: false         # Inline HTML
+MD046: false         # Code block style
+```
+
+#### 6. Configure Pre-commit Hooks
 
 Create `.pre-commit-config.yaml`:
 
@@ -166,7 +216,7 @@ dvc install --use-pre-commit-tool
 pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type post-checkout
 ```
 
-#### 6. Create Test Pipeline
+#### 7. Create Test Pipeline
 
 Create `dvc.yaml` to verify setup:
 
@@ -205,6 +255,26 @@ This section covers the standard workflow for team members working on existing p
 - Update processing scripts
 - Coordinate team-wide data updates
 
+### First Day
+
+Once the repo is setup here's what someone else - or you starting over - would need to do:
+
+```bash
+# Clone and install
+git clone https://github.com/yourusername/{PROJECT_NAME}.git
+cd {PROJECT_NAME}
+uv sync
+
+# Configure cloud storage for DVC (if using profiles)
+dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
+# Example: dvc remote modify --local jump-s3 profile imaging-platform
+
+# Verify DVC autostage is enabled (should output "true")
+dvc config core.autostage
+
+pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type post-checkout
+```
+
 ### Start Your Day
 
 ```bash
@@ -239,10 +309,10 @@ dvc status
 
 ### Running Your Analysis
 
-1. **Create/open notebook**: `notebooks/1.01-abc-analysis-name.ipynb`
+1. **Create notebook**: `notebooks/1.01-abc-analysis-name.py`
 2. **Load data**: Read from `data/interim/`
 3. **Save outputs**: Write to `data/processed/your-analysis/`
-4. **Track experiments**: Create GitHub issue with hypothesis, link notebook, paste key figures
+4. **Track experiment**: Create GitHub issue with hypothesis, link notebook, paste key figures
 
 ### Sharing Your Work
 
@@ -251,18 +321,18 @@ dvc status
 dvc add data/processed/your-analysis/
 
 # Commit everything
-git add notebooks/your-notebook.ipynb data/processed/your-analysis.dvc
+git add notebooks/your-notebook.py data/processed/your-analysis.dvc
 git commit -m "Add analysis of X showing Y"
 
-# Push (data sync happens automatically via hooks)
+# Push (DVC data sync happens automatically via hooks)
 git push
 ```
 
-### Pull Request Guidelines
+### Pull Requests
 
-- **Keep PRs small and focused** - one logical change per PR
-- **Use PRs for code review**, Issues for experiment discussion
-- **Fork-and-branch for external contributors**
+- **One logical change per PR**
+- **Code review via PRs, experiment discussion via Issues**
+- **External contributors use fork-and-branch**
 
 ## Data Management Standards
 
@@ -301,6 +371,16 @@ dvc import-url --version-aware s3://bucket/dataset.parquet data/raw/
 - `--to-remote`: Skips local download, sends directly to DVC remote
 - `--version-aware`: Enables updating when source changes
 - Files show as "deleted" in `dvc status` until explicitly pulled
+
+**⚠️ Cloud Storage Warning**: S3 may re-fetch files on every `dvc pull` ([DVC issue #10813](https://github.com/iterative/dvc/issues/10813)).
+
+**Minimize impact**:
+
+- Pull files once when needed: `dvc pull data/raw/specific-file.dvc`
+- Avoid repeated pulls of large files
+- JUMP parquet files (2-3GB) should be pulled individually
+
+**Note**: `dvc status` shows warnings about "frozen" stages for import-url files. This is normal - imports are frozen to avoid checking external URLs. Use `dvc update <file.dvc>` to manually check for updates.
 
 #### Dynamic Source Pattern
 
