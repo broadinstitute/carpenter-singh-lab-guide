@@ -3,13 +3,45 @@ repos:
   rev: v5.0.0
   hooks:
   - id: trailing-whitespace
+    exclude: \.dvc$
   - id: check-added-large-files
-    args: ['--maxkb=10240']
+    args: [--maxkb=10240]      # 10MB limit
+  - id: check-yaml
+  - id: end-of-file-fixer
+    exclude: \.dvc$
+
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.9.10
+  rev: v0.9.1
   hooks:
-    - id: ruff
-      types_or: [ python, pyi ]
-      args: [ --fix ]
-    - id: ruff-format
-      types_or: [ python, pyi ]
+  - id: ruff
+    args: [--fix]
+  - id: ruff-format
+
+- repo: https://github.com/igorshubovych/markdownlint-cli
+  rev: v0.45.0
+  hooks:
+  - id: markdownlint
+    args: [--fix]
+    files: \.(md|markdown)$
+- repo: https://github.com/iterative/dvc
+  rev: 3.59.1
+  hooks:
+  - id: dvc-pre-commit
+    additional_dependencies:
+    - .[all]
+    language_version: python3
+    stages:
+    - pre-commit
+  - id: dvc-pre-push
+    additional_dependencies:
+    - .[all]
+    language_version: python3
+    stages:
+    - pre-push
+  - id: dvc-post-checkout
+    additional_dependencies:
+    - .[all]
+    language_version: python3
+    stages:
+    - post-checkout
+    always_run: true
