@@ -449,6 +449,10 @@ Study these repositories for experiment tracking with GitHub Issues (note: these
 - <https://github.com/jump-cellpainting/pilot-cpjump1-analysis/>
 - <https://github.com/broadinstitute/cell-health>
 - <https://github.com/jump-cellpainting/morphmap>
+- <https://github.com/jump-cellpainting/genemod>
+- <https://github.com/broadinstitute/neuronal-cell-painting>
+- <https://github.com/broadinstitute/2021_09_01_VarChAMP>
+- <https://github.com/broadinstitute/2024_09_09_Axiom_OASIS>
 
 ### Common Commands Reference
 

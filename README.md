@@ -8,7 +8,9 @@ Resources and standards for the Carpenter-Singh Lab at the Broad Institute.
 
 - **[Project Workflows](workflows.md)** - How we organize and run data science projects using Cookiecutter Data Science principles
 
-### [More sections coming soon]
+### Learning Resources
+
+- **[Resources](resources.md)** - Scientific literature, tools, and educational materials for image-based profiling
 
 ## Contributing
 
