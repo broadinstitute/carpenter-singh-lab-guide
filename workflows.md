@@ -263,7 +263,7 @@ stages:
       - data/interim/test.txt
 ```
 
-Read up more on data pipelines [here](https://dvc.org/doc/start/data-pipelines/data-pipelines).
+Read up more on [data pipelines](https://dvc.org/doc/start/data-pipelines/data-pipelines).
 
 Test it:
 
