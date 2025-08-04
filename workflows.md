@@ -48,11 +48,12 @@ Example progression:
 
 **Phase numbers**:
 
+(Adapted from from [CCDS](https://cookiecutter-data-science.drivendata.org/using-the-template/))
+
 - `0`: Exploration
 - `1`: Data cleaning/feature engineering
-- `2`: Visualization
-- `3`: Modeling
-- `4`: Publication figures
+- `2`: Analysis
+- `3`: Publication figures
 
 **Example**: `1.03-srs-merge-annotations.py`
 
