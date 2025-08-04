@@ -23,4 +23,3 @@ repos:
   - id: markdownlint
     args: [--fix]
     files: \.(md|markdown)$
-
