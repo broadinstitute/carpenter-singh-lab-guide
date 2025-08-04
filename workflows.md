@@ -70,6 +70,7 @@ This section covers creating a new project from scratch. Most team members will 
 ### Prerequisites
 
 - Git
+- [DVC](https://dvc.org/doc/install)
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) package manager
 - Cloud CLI tools configured (typically AWS CLI)
@@ -102,7 +103,9 @@ dvc remote add -d {REMOTE_NAME} {REMOTE_URL}
 
 # If using AWS profiles or cloud-specific authentication
 dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
-# Example: dvc remote modify --local my-s3 profile imaging-platform
+# Example: dvc remote modify --local my-s3 profile broad-imaging
+# where broad-imaging is the name of the AWS profile in your ~/.aws/credentials
+# (and has write access to s3://my-bucket/dvc)
 ```
 
 **Note**: The `--local` flag stores credentials in `.dvc/config.local` which is gitignored.
@@ -233,6 +236,8 @@ stages:
     outs:
       - data/interim/test.txt
 ```
+
+Read up more on data pipelines [here](https://dvc.org/doc/start/data-pipelines/data-pipelines).
 
 Test it:
 
