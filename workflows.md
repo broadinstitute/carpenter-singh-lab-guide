@@ -132,8 +132,11 @@ touch README.md
 uv init --name ${PROJECT_NAME} --package
 
 # Add core dependencies
-uv add loguru typer "dvc[s3]"
+uv add loguru typer dotenv "dvc[s3]"
 uv add awscli  # or azure-cli, google-cloud-storage
+
+# Add typical analysis dependencies
+uv add pandas
 
 # Add development dependencies
 uv add --group lint ruff pre-commit
@@ -225,7 +228,30 @@ dvc install --use-pre-commit-tool
 pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type post-checkout
 ```
 
-#### 7. Create Test Pipeline
+#### 7. Create config file for project library
+
+Create `${PROJECT_NAME}/config.py` to set up data paths, and do other setup needed for code you may write in the project library.
+
+```py
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if it exists
+load_dotenv()
+
+# Paths
+PROJ_ROOT = Path(__file__).resolve().parents[2]
+logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
+
+DATA_DIR = PROJ_ROOT / "data"
+RAW_DATA_DIR = DATA_DIR / "raw"
+INTERIM_DATA_DIR = DATA_DIR / "interim"
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
+EXTERNAL_DATA_DIR = DATA_DIR / "external"
+```
+
+#### 8. Create Test Pipeline
 
 Create `dvc.yaml` to verify setup:
 
@@ -407,7 +433,7 @@ git commit -m "Add data imports"
 
 #### Dynamic Source Pattern
 
-1. Create downloader: `{project_name}/downloading/fetch_api_data.py`
+1. Create downloader in the project package: `{project_name}/downloading/fetch_api_data.py`
 2. Add to `dvc.yaml`:
 
 ```yaml
