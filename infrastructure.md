@@ -45,3 +45,35 @@
 
 - Install applications using [brew](https://brew.sh/)
 - Use [uv](https://github.com/astral-sh/uv) for Python environment management
+
+## Project Setup & Initialization
+
+> [!IMPORTANT]
+> Complete these steps before starting any new project. Most links below require Broad access 🔒.
+
+### Project Initialization
+
+You will rarely need to initialize a project yourself, but here are the instructions if needed:
+
+#### For Non-Cimini Lab Projects
+
+1. [Create Imaging Platform Project List Item](https://new.ipwiki.app/image_analyst_onboarding_and_project_tracking#create_imaging_platform_project_list_item) 🔒
+2. [Send startup email](https://new.ipwiki.app/image_analyst_onboarding_and_project_tracking#send_startup_email) 🔒 - See this [blog post](https://carpenter-singh-lab.broadinstitute.org/blog/tracking-projects-with-gmail-tags-collaborating-through-email) for context
+3. Continue with "All Projects" steps below
+
+#### For Cimini Lab Projects
+
+- Find `project_tag` and `project_name_full` in [Imaging Platform Project List](https://airtable.com/appctUGldmRNkVS19) 🔒
+- CC img-emailcatcher in email correspondence
+- Continue with "All Projects" steps below
+
+#### All Projects
+
+1. Create GitHub repo following [wiki guidelines](https://new.ipwiki.app/github#github_policy) 🔒 for lab notebook
+2. Create folder in [ProjectPlanning](https://drive.google.com/drive/u/0/folders/0B9yZOJkJh5aVMlN5SHhHa0J2VTg) 🔒: `YYYY_MM_DD_Project_description`
+3. Create S3 folder: `s3://imaging-platform/YYYY_MM_DD_Project_description`
+
+### Project Naming Convention
+
+- Format: `YYYY_MM_DD_Short_description`
+- Example: `2021_08_23_Batch_effect_correction`
