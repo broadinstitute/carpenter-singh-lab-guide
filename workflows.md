@@ -23,7 +23,7 @@ project-name/
 │   ├── external/     # Third-party reference data
 │   ├── interim/      # Pipeline-generated intermediate data
 │   └── processed/    # Your analysis outputs (your workspace)
-├── {project_name}/   # Python package with processing code
+├── <PROJECT_NAME>/   # Python package with processing code
 ├── notebooks/        # Numbered analysis notebooks
 ├── scripts/          # Shell scripts for data import
 └── docs/            # Documentation
@@ -81,13 +81,18 @@ This section covers creating a new project from scratch. Most team members will 
 
 ### Complete Setup Process
 
+> [!NOTE]
+> Throughout this guide, replace `<PROJECT_NAME>` with your actual project name in all commands and examples.
+
 #### 1. Initialize Project
 
 ```bash
 # Create and enter project directory
-# export PROJECT_NAME=my_project
-mkdir ${PROJECT_NAME}
-cd ${PROJECT_NAME}
+mkdir <PROJECT_NAME>
+cd <PROJECT_NAME>
+
+# Example: mkdir cellpainting-analysis
+#          cd cellpainting-analysis
 
 # Initialize Git and DVC
 git init
@@ -118,7 +123,7 @@ dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
 ```bash
 # Create all directories
 mkdir -p data/{raw,external,interim,processed}
-mkdir -p ${PROJECT_NAME}
+mkdir -p <PROJECT_NAME>
 mkdir -p notebooks scripts tests
 mkdir -p docs references
 
@@ -132,7 +137,7 @@ touch README.md
 
 ```bash
 # Initialize Python project
-uv init --name ${PROJECT_NAME} --package
+uv init --name <PROJECT_NAME> --package
 
 # Add core dependencies
 uv add loguru typer dotenv "dvc[s3]"
@@ -160,14 +165,14 @@ curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Pytho
 
 Add to your `pyproject.toml`:
 
-Note: Replace `{PROJECT_NAME}` with the actual project name
+Note: Replace `<PROJECT_NAME>` with the actual project name
 
 ```toml
 [tool.ruff]
 line-length = 120
-src = ["{PROJECT_NAME}"]
+src = ["<PROJECT_NAME>"]
 target-version = "py312"
-include = ["pyproject.toml", "{PROJECT_NAME}/**/*.py"]
+include = ["pyproject.toml", "<PROJECT_NAME>/**/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "W"]
@@ -233,7 +238,7 @@ pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type post-
 
 #### 7. Create config file for project library
 
-Create `${PROJECT_NAME}/config.py` to set up data paths, and do other setup needed for code you may write in the project library.
+Create `<PROJECT_NAME>/config.py` to set up data paths, and do other setup needed for code you may write in the project library.
 
 ```py
 from pathlib import Path
@@ -245,7 +250,6 @@ load_dotenv()
 
 # Paths
 PROJ_ROOT = Path(__file__).resolve().parents[2]
-logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
 
 DATA_DIR = PROJ_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
@@ -302,8 +306,8 @@ Once the repo is setup here's what someone else - or you starting over - would n
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/{PROJECT_NAME}.git
-cd {PROJECT_NAME}
+git clone https://github.com/yourusername/<PROJECT_NAME>.git
+cd <PROJECT_NAME>
 uv sync --all-groups
 
 # Configure cloud storage for DVC (if using profiles)
@@ -436,15 +440,15 @@ git commit -m "Add data imports"
 
 #### Dynamic Source Pattern
 
-1. Create downloader in the project package: `{project_name}/downloading/fetch_api_data.py`
+1. Create downloader in the project package: `<PROJECT_NAME>/downloading/fetch_api_data.py`
 2. Add to `dvc.yaml`:
 
 ```yaml
 stages:
   fetch_api_data:
-    cmd: uv run python -m {project_name}.downloading.fetch_api_data
+    cmd: uv run python -m <PROJECT_NAME>.downloading.fetch_api_data
     deps:
-      - {project_name}/downloading/fetch_api_data.py
+      - <PROJECT_NAME>/downloading/fetch_api_data.py
     outs:
       - data/external/api_data.json
 ```
