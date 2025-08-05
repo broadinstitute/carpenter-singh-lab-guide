@@ -12,6 +12,10 @@ Resources and standards for the Carpenter-Singh Lab at the Broad Institute.
 
 - **[Resources](resources.md)** - Scientific literature, tools, and educational materials for image-based profiling
 
+### Technical Setup
+
+- **[Infrastructure](infrastructure.md)** - Computing resources, development environment, and internal tools
+
 ## Contributing
 
 This is a living document. Please contribute additional guides, patterns, and standards as we develop them.

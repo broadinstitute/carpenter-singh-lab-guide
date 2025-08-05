@@ -1,5 +1,14 @@
 # Resources
 
+> [!NOTE]
+> Some links in this document require Broad Institute access. These are marked with 🔒.
+
+## Internal Resources
+
+- Internal paper PDFs: [Google Drive folder](https://drive.google.com/drive/u/0/folders/1OWH25SMhGiXc_TGIhIEc2lxRRX-99Vxr) 🔒
+- Biology 101: [Internal wiki resources](https://new.ipwiki.app/orientation_to_the_imaging_platform#biology) 🔒
+- Slack discussion on data analysis: [discussion](https://broadinstitute.slack.com/archives/G01EEQFNZD0/p1658843416312999) 🔒
+
 ## Educational Resources
 
 ### Computing Skills
@@ -38,23 +47,6 @@
 
 - [Profiling Handbook](https://cytomining.github.io/profiling-handbook/) - Step-by-step instructions for producing image-based profiles from raw images
 - [LINCS Workflow](https://github.com/broadinstitute/lincs-cell-painting/tree/e9737c3e4e4443eb03c2c278a145f12efe255756/profiles#workflow) - Workflow diagram of image-based profiling
-
-## Development Environment Setup
-
-### Package Management
-
-- Install applications using [brew](https://brew.sh/)
-- Use [uv](https://github.com/astral-sh/uv) for Python environment management
-- Install R following [these instructions](https://github.com/broadinstitute/imaging-configs/blob/master/R-instructions.md)
-
-### Git Configuration
-
-```bash
-# Configure shared repositories
-git config --global core.sharedRepository true
-```
-
-**Best practice**: Avoid [amending](https://stackoverflow.com/questions/253055/how-do-i-push-amended-commit-to-the-remote-git-repository) pushed commits
 
 ## General Principles
 

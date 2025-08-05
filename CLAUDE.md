@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## Repository Context
 
-Documentation repository for Carpenter-Singh Lab at the Broad Institute. Maintains lab standards for data science workflows using Cookiecutter Data Science (CCDS) principles.
+Documentation repository for Carpenter-Singh Lab at the Broad Institute.
 
 ## Key Tasks When Working Here
 
@@ -47,9 +47,10 @@ carpenter-singh-lab-standards/
 └── CLAUDE.md         # This file
 ```
 
+CCDS = Cookiecutter Data Science
+
 ## When Making Changes
 
-- workflows.md is the authoritative source for lab procedures
 - New documentation must complement, not duplicate, existing content
 - Make processes clear and executable, not flexible
 
