@@ -52,11 +52,19 @@
 
 ### Troubleshooting
 
-Follow the 30-minute rule: Try to solve issues independently for ~30 minutes before asking for help.
+Follow the 30-minute rule: Try to solve issues independently for ~30 minutes before asking for help ([group norm](https://broadinstitute.slack.com/archives/C3PNSTV09/p1621283882195500) 🔒).
 
-1. Search existing resources (documentation, issues, archives)
-2. Consult official documentation for relevant tools/libraries
-3. Consider using AI tools (ChatGPT, Claude) with appropriate caution
-4. Google error messages or problem descriptions
-5. Post in relevant channels with details of what you've already tried
-6. Document your troubleshooting process for future reference
+1. Search existing resources:
+   - Slack archives
+   - GitHub issues
+   - Lab documentation
+   - Official tool/library documentation
+2. Try automated help (Google, AI tools with appropriate caution)
+3. Post in relevant Slack channels:
+   - #ip-it for computing
+   - #ip-profiling for data science
+   - #ip-dear-computer-scientist for computer science
+   - #ip-dear_biologist for biology
+4. Explain what you've already tried and where you're stuck
+5. Escalate to PIs or senior lab members if still blocked
+6. Document your solution for future reference
