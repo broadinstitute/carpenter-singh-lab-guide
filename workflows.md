@@ -3,6 +3,9 @@
 > [!IMPORTANT]
 > This workflow is being actively tested in our lab. Expect rough edges and please share feedback!
 
+> [!NOTE]
+> Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides.
+
 ## How We Organize Projects
 
 We follow [Cookiecutter Data Science](https://cookiecutter-data-science.drivendata.org/) principles with specific adaptations for our lab's needs.
@@ -389,6 +392,29 @@ git push
 4. **Never edit upstream directories**: They're managed by the pipeline
 5. **Maintainers coordinate updates**: Pipeline changes require coordination
 
+**DVC tracking patterns** (confusing but important):
+
+- `dvc import-url`, `dvc add` → individual `.dvc` files
+- `dvc.yaml` stages → outputs tracked in `dvc.lock` only
+
+**DVC storage layers**:
+
+```text
+Workspace ←→ Local Cache ←→ Remote Storage
+   |            |              |
+dvc status   dvc status -c   dvc push/pull
+```
+
+- **Workspace**: Your actual files (what you see/edit)
+- **Local cache**: Hidden `.dvc/cache/` - stores files by hash, deduplicates identical content
+- **Remote storage**: Cloud backup (S3, etc.) for sharing/backup
+
+Key details:
+
+- `dvc status` checks workspace vs cache, reports "not in cache" if data missing locally
+- `dvc pull` = `dvc fetch` (remote→cache) + `dvc checkout` (cache→workspace)
+- Content-addressed storage means identical files stored only once
+
 ### Adding New Data Sources (Maintainers Only)
 
 **Decision Tree:**
@@ -459,11 +485,22 @@ stages:
 # Check for upstream changes
 dvc status
 
+# Check what would run (dry run)
+dvc repro --dry
+
 # Update specific imported file
 dvc update data/external/metadata.csv.dvc
 
+# Check what changed after update
+dvc status
+dvc repro --dry
+
 # Run full pipeline
 dvc repro
+
+# Check pipeline completed successfully
+dvc status
+dvc status -c
 
 # Push all changes
 dvc push
@@ -511,10 +548,19 @@ git commit -m "Add analysis showing X"
 git push
 
 # Check data status
-dvc status          # Local vs tracked
-dvc status -c       # Cache vs remote
+dvc status          # Workspace vs local cache
+dvc repro --dry     # Preview what would run
+dvc status -c       # Local cache vs remote (shows new files after repro)
 dvc diff            # See changes
 ```
+
+**Common confusion**: After `dvc repro`, all three commands show different things:
+
+- `dvc status`: "Up to date" (workspace matches cache)
+- `dvc repro --dry`: "Nothing to do" (no stages need re-running)
+- `dvc status -c`: Shows "new files" (cache has data not yet pushed to remote)
+
+This is normal - use `dvc push` to sync cache to remote.
 
 ### Troubleshooting
 

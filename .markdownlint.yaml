@@ -6,3 +6,4 @@ MD029:
   style: ordered     # Ordered list style
 MD033: false         # Inline HTML
 MD046: false         # Code block style
+MD028: false         # Blank line before blockquote
