@@ -4,6 +4,9 @@
 > This workflow is being actively tested in our lab. Expect rough edges and please share feedback!
 
 > [!NOTE]
+> We have migrated from DVC to a simpler workflow using Justfile + Snakemake + s5cmd for data management. This provides direct S3 operations without intermediate cache layers.
+
+> [!NOTE]
 > Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides.
 
 ## How We Organize Projects
@@ -76,11 +79,12 @@ This section covers creating a new project from scratch. Most team members will 
 ### Prerequisites
 
 - Git
-- [DVC](https://dvc.org/doc/install)
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) package manager
-- Cloud CLI tools configured (typically AWS CLI)
-- Access to cloud storage for DVC remote
+- [just](https://github.com/casey/just) command runner
+- [s5cmd](https://github.com/peak/s5cmd) for S3 operations
+- [Snakemake](https://snakemake.github.io/) for pipeline execution
+- AWS CLI configured with appropriate credentials
 
 ### Complete Setup Process
 
@@ -97,29 +101,24 @@ cd <PROJECT_NAME>
 # Example: mkdir cellpainting-analysis
 #          cd cellpainting-analysis
 
-# Initialize Git and DVC
+# Initialize Git
 git init
-dvc init
-
-# Configure DVC to automatically stage .dvc files
-dvc config core.autostage true
 ```
 
-#### 2. Configure Remote Storage
+#### 2. Configure Storage
 
 ```bash
-# Add default remote storage
-dvc remote add -d {REMOTE_NAME} {REMOTE_URL}
-# Example: dvc remote add -d my-s3 s3://my-bucket/dvc
+# Copy the Justfile template from:
+# https://github.com/broadinstitute/jump_production/blob/main/Justfile
+# This provides standard commands: pull, push, run, download-externals, etc.
 
-# If using AWS profiles or cloud-specific authentication
-dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
-# Example: dvc remote modify --local my-s3 profile broad-imaging
-# where broad-imaging is the name of the AWS profile in your ~/.aws/credentials
-# (and has write access to s3://my-bucket/dvc)
+# Edit the Justfile to set your S3 configuration:
+# S3_BUCKET := "your-bucket"
+# S3_PROJECT_PATH := "projects/your-project/datastore"
+
+# Ensure AWS profile is configured
+# Example: export AWS_PROFILE=broad-imaging
 ```
-
-**Note**: The `--local` flag stores credentials in `.dvc/config.local` which is gitignored.
 
 #### 3. Create Directory Structure
 
@@ -143,8 +142,8 @@ touch README.md
 uv init --name <PROJECT_NAME> --package
 
 # Add core dependencies
-uv add loguru typer dotenv "dvc[s3]"
-uv add awscli  # or azure-cli, google-cloud-storage
+uv add loguru typer python-dotenv pooch
+uv add snakemake  # for pipeline execution
 
 # Add typical analysis dependencies
 uv add pandas
@@ -160,7 +159,7 @@ Download Python gitignore template
 curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 ```
 
-> **Note**: DVC automatically manages `.gitignore` entries for DVC-specific files and data directories as you use them.
+> **Note**: Add `data/` to `.gitignore` to prevent accidentally committing large data files.
 
 #### 5. Configure Code Quality Tools
 
@@ -214,12 +213,10 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: \.dvc$
       - id: check-added-large-files
         args: [--maxkb=10240]
       - id: check-yaml
       - id: end-of-file-fixer
-        exclude: \.dvc$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.1
@@ -229,14 +226,11 @@ repos:
       - id: ruff-format
 ```
 
-Install hooks (order matters!):
+Install hooks:
 
 ```bash
-# CRITICAL: Install DVC hooks first
-dvc install --use-pre-commit-tool
-
-# Then install pre-commit hooks
-pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type post-checkout
+# Install pre-commit hooks
+pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
 #### 7. Create config file for project library
@@ -263,26 +257,23 @@ EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
 #### 8. Create Test Pipeline
 
-Create `dvc.yaml` to verify setup:
+Create `Snakefile` to verify setup:
 
-```yaml
-stages:
-  prepare_data:
-    cmd: echo "Preparing data..." && echo "test" > data/interim/test.txt
-    outs:
-      - data/interim/test.txt
+```python
+rule prepare_data:
+    output:
+        "data/interim/test.txt"
+    shell:
+        "echo 'test' > {output}"
 ```
-
-Read up more on [data pipelines](https://dvc.org/doc/start/data-pipelines/data-pipelines).
 
 Test it:
 
 ```bash
-dvc repro
+snakemake --cores 1
 git add .
-git commit -m "Initial project structure with DVC pipeline"
+git commit -m "Initial project structure with pipeline"
 # pre-commit hooks might update files upon commit, so you may need to git add again
-dvc push
 ```
 
 ## Daily Workflow
@@ -313,14 +304,11 @@ git clone https://github.com/yourusername/<PROJECT_NAME>.git
 cd <PROJECT_NAME>
 uv sync --all-groups
 
-# Configure cloud storage for DVC (if using profiles)
-dvc remote modify --local {REMOTE_NAME} profile {CLOUD_PROFILE}
-# Example: dvc remote modify --local jump-s3 profile imaging-platform
+# Configure AWS profile if needed
+export AWS_PROFILE=your-profile
+# Example: export AWS_PROFILE=imaging-platform
 
-# Verify DVC autostage is enabled (should output "true")
-dvc config core.autostage
-
-pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type post-checkout
+pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
 ### Start Your Day
@@ -330,12 +318,12 @@ pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type post-
 git pull
 
 # 2. Get latest data
-dvc pull -R data/external data/interim
-# Note: Skip data/raw/ if files are large
+just pull-external  # Get reference data
+just pull          # Get processed results
 
 # 3. Check pipeline status
-dvc repro --dry
-# If it shows stages would run: dvc repro --pull
+just dry           # Preview what would run
+# If it shows work to do: just run
 ```
 
 ### Working with Large Datasets
@@ -343,17 +331,14 @@ dvc repro --dry
 For selective downloads:
 
 ```bash
-# Download specific files
-dvc pull data/raw/specific-file.parquet.dvc
+# Download specific run
+just pull-run specific-analysis
 
-# Download by pattern
-dvc pull data/external/*.dvc
 
-# Check what's missing locally
-dvc status
+
+# List available data
+s5cmd ls s3://bucket/path/
 ```
-
-**Note**: Files showing as "deleted" in `dvc status` are just not downloaded locally - they're safely tracked in remote storage.
 
 ### Running Your Analysis
 
@@ -365,14 +350,12 @@ dvc status
 ### Sharing Your Work
 
 ```bash
-# Track your outputs
-dvc add data/processed/your-analysis/
+# Push your analysis to S3
+just push-run your-analysis
 
-# Commit everything
-git add notebooks/your-notebook.py data/processed/your-analysis.dvc
+# Commit code changes
+git add notebooks/your-notebook.py
 git commit -m "Add analysis of X showing Y"
-
-# Push (DVC data sync happens automatically via hooks)
 git push
 ```
 
@@ -386,124 +369,94 @@ git push
 
 ### Core Principles
 
-1. **Pipeline manages foundation data**: `dvc repro` processes raw/external → interim
+1. **Pipeline manages foundation data**: `snakemake` processes raw/external → interim
 2. **Analysts work in processed/**: All personal analysis outputs go here
 3. **Data flows one way**: raw/external → interim → processed
 4. **Never edit upstream directories**: They're managed by the pipeline
 5. **Maintainers coordinate updates**: Pipeline changes require coordination
 
-**DVC tracking patterns** (confusing but important):
-
-- `dvc import-url`, `dvc add` → individual `.dvc` files
-- `dvc.yaml` stages → outputs tracked in `dvc.lock` only
-
-**DVC storage layers**:
-
-```text
-Workspace ←→ Local Cache ←→ Remote Storage
-   |            |              |
-dvc status   dvc status -c   dvc push/pull
-```
-
-- **Workspace**: Your actual files (what you see/edit)
-- **Local cache**: Hidden `.dvc/cache/` - stores files by hash, deduplicates identical content
-- **Remote storage**: Cloud backup (S3, etc.) for sharing/backup
-
-Key details:
-
-- `dvc status` checks workspace vs cache, reports "not in cache" if data missing locally
-- `dvc pull` = `dvc fetch` (remote→cache) + `dvc checkout` (cache→workspace)
-- Content-addressed storage means identical files stored only once
-
 ### Adding New Data Sources (Maintainers Only)
 
 **Decision Tree:**
 
-- **Static URLs** (S3, HTTP) → Use shell scripts
-- **Dynamic sources** (APIs, auth required) → Create Python scripts + DVC stages
+- **External URLs/APIs** → Create downloaders in `<PROJECT_NAME>/downloading/`
+- **S3 data** → Use s5cmd directly
+- **All sources** → Integrate with Snakemake rules if part of pipeline
 
-#### Static URL Import Pattern
+#### External Data Import Pattern
 
-Create/update `scripts/setup_external_data.sh`:
+Create `<PROJECT_NAME>/downloading/download_externals.py` to fetch reference data using Pooch:
 
-```bash
-#!/bin/bash
-# Example: Import reference metadata (→ data/external/)
-[ ! -f data/external/jump-metadata.csv.dvc ] && \
-dvc import-url --to-remote \
-    https://github.com/jump-cellpainting/datasets/raw/main/metadata/plate.csv.gz \
-    data/external/jump-metadata.csv.gz
+```python
+import pooch
+from pathlib import Path
+from loguru import logger
 
-# Example: Import Cell Painting data via S3 (→ data/raw/)
-[ ! -f data/raw/BR00116991-A01-1-Image.csv.dvc ] && \
-dvc import-url --version-aware \
-    s3://cellpainting-gallery/cpg0000-jump-pilot/source_4/workspace/analysis/2020_11_04_CPJUMP1/BR00116991/analysis/BR00116991-A01-1/Image.csv \
-    data/raw/BR00116991-A01-1-Image.csv
+EXTERNAL_DIR = Path("data/external")
+
+FILES = {
+    "https://github.com/jump-cellpainting/datasets/raw/main/metadata/compound.csv.gz": "compound.csv.gz",
+    "https://github.com/jump-cellpainting/datasets/raw/main/metadata/plate.csv.gz": "plate.csv.gz",
+    # Add more URLs as needed
+}
+
+MANUAL_FILES = ["manual_data.xlsx"]  # Files that need manual download
+
+def main():
+    EXTERNAL_DIR.mkdir(parents=True, exist_ok=True)
+
+    for url, filename in FILES.items():
+        pooch.retrieve(url=url, known_hash=None, path=EXTERNAL_DIR, fname=filename)
+
+    for filename in MANUAL_FILES:
+        if not (EXTERNAL_DIR / filename).exists():
+            logger.warning(f"{filename} missing - add manually")
+
+if __name__ == "__main__":
+    main()
 ```
 
-After running the script:
+Run downloads:
 
 ```bash
-# Commit the auto-staged .dvc files
-git commit -m "Add data imports"
+# Download all external data
+uv run python -m <PROJECT_NAME>.downloading.download_externals
+
+# Or use the Justfile
+just download-externals
 ```
 
-**Notes:**
+#### Integrating Downloads with Pipeline
 
-- `--to-remote`: Skips local download, sends directly to DVC remote
-- `--version-aware`: Enables updating when source changes
-- Files show as "deleted" in `dvc status` until explicitly pulled
+Add to `Snakefile` for automatic downloads:
 
-**⚠️ Cloud Storage Warning**: S3 may re-fetch files on every `dvc pull` ([DVC issue #10813](https://github.com/iterative/dvc/issues/10813)).
-
-**Minimize impact**:
-
-- Pull files once when needed: `dvc pull data/raw/specific-file.dvc`
-- Avoid repeated pulls of large files
-- JUMP parquet files (2-3GB) should be pulled individually
-
-**Note**: `dvc status` shows warnings about "frozen" stages for import-url files. This is normal - imports are frozen to avoid checking external URLs. Use `dvc update <file.dvc>` to manually check for updates.
-
-#### Dynamic Source Pattern
-
-1. Create downloader in the project package: `<PROJECT_NAME>/downloading/fetch_api_data.py`
-2. Add to `dvc.yaml`:
-
-```yaml
-stages:
-  fetch_api_data:
-    cmd: uv run python -m <PROJECT_NAME>.downloading.fetch_api_data
-    deps:
-      - <PROJECT_NAME>/downloading/fetch_api_data.py
-    outs:
-      - data/external/api_data.json
+```python
+rule download_externals:
+    output:
+        directory("data/external/")
+    shell:
+        "uv run python -m <PROJECT_NAME>.downloading.download_externals"
 ```
 
 ### Pipeline Management (Maintainers Only)
 
 ```bash
-# Check for upstream changes
-dvc status
-
 # Check what would run (dry run)
-dvc repro --dry
+just dry
+# or: snakemake --dry-run
 
-# Update specific imported file
-dvc update data/external/metadata.csv.dvc
-
-# Check what changed after update
-dvc status
-dvc repro --dry
+# Update external data
+just download-externals
+# or: just pull-external
 
 # Run full pipeline
-dvc repro
+just run
+# or: snakemake --cores 4
 
-# Check pipeline completed successfully
-dvc status
-dvc status -c
+# Push all results
+just push
 
-# Push all changes
-dvc push
+# Commit changes
 git add .
 git commit -m "Update pipeline with new data"
 git push
@@ -516,65 +469,8 @@ git push
 3. Document changes in commit message
 4. Notify team when complete
 
-## Appendix: Complete Examples
+## Appendix
 
 ### Example Projects
 
-Study these repositories for experiment tracking with GitHub Issues (note: these predate our current CCDS standards):
-
-- <https://github.com/jump-cellpainting/pilot-cpjump1-analysis/>
-- <https://github.com/broadinstitute/cell-health>
-- <https://github.com/jump-cellpainting/morphmap>
-- <https://github.com/jump-cellpainting/genemod>
-- <https://github.com/broadinstitute/neuronal-cell-painting>
-- <https://github.com/broadinstitute/2021_09_01_VarChAMP>
-- <https://github.com/broadinstitute/2024_09_09_Axiom_OASIS>
-
-### Common Commands Reference
-
-```bash
-# First time setup
-git clone <repo> && cd <repo>
-uv sync
-dvc pull -R data/external data/interim
-
-# Daily sync
-git pull && dvc pull -R data/external data/interim
-
-# Share work
-dvc add data/processed/my-analysis/
-git add -A
-git commit -m "Add analysis showing X"
-git push
-
-# Check data status
-dvc status          # Workspace vs local cache
-dvc repro --dry     # Preview what would run
-dvc status -c       # Local cache vs remote (shows new files after repro)
-dvc diff            # See changes
-```
-
-**Common confusion**: After `dvc repro`, all three commands show different things:
-
-- `dvc status`: "Up to date" (workspace matches cache)
-- `dvc repro --dry`: "Nothing to do" (no stages need re-running)
-- `dvc status -c`: Shows "new files" (cache has data not yet pushed to remote)
-
-This is normal - use `dvc push` to sync cache to remote.
-
-### Troubleshooting
-
-#### Pipeline is not up to date
-
-- If you're an analyst: Wait for maintainer to update
-- If you're a maintainer: Run `dvc repro` and push changes
-
-#### DVC pull is slow
-
-- Pull only what you need: `dvc pull data/interim/specific-file`
-- Skip large raw files unless necessary
-
-#### Can't find my data
-
-- Check you're reading from `data/interim/`, not `data/raw/`
-- Ensure you've run `dvc pull` for the files you need
+<https://github.com/broadinstitute/jump_production>
