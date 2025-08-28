@@ -4,7 +4,7 @@
 > This workflow is being actively tested in our lab. Expect rough edges and please share feedback!
 
 > [!NOTE]
-> We have migrated from DVC to a simpler workflow using Justfile + Snakemake + s5cmd for data management. This provides direct S3 operations without intermediate cache layers.
+> We use Justfile + Snakemake + s5cmd for data management. The Justfile provides a clean get/put interface for S3 operations, while Snakemake handles pipeline execution. All data downloads include SHA256 hash verification for integrity.
 
 > [!NOTE]
 > Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides.
@@ -19,6 +19,7 @@ We follow [Cookiecutter Data Science](https://cookiecutter-data-science.drivenda
 2. **Raw data is immutable**: Never edit raw data directly
 3. **Clear separation of concerns**: Pipeline-managed data vs. personal analysis
 4. **Everything is reproducible**: Code + raw data = any output
+5. **Data integrity**: All downloaded files verified with SHA256 hashes
 
 ### Directory Structure
 
@@ -81,8 +82,8 @@ This section covers creating a new project from scratch. Most team members will 
 - Git
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) package manager
-- [just](https://github.com/casey/just) command runner
-- [s5cmd](https://github.com/peak/s5cmd) for S3 operations
+- [just](https://github.com/casey/just) command runner (install with `uv add rust-just`)
+- [s5cmd](https://github.com/peak/s5cmd) for S3 operations (with parallel workers)
 - [Snakemake](https://snakemake.github.io/) for pipeline execution
 - AWS CLI configured with appropriate credentials
 
@@ -110,11 +111,15 @@ git init
 ```bash
 # Copy the Justfile template from:
 # https://github.com/broadinstitute/jump_production/blob/main/Justfile
-# This provides standard commands: pull, push, run, download-externals, etc.
+# This provides standard commands using get/put convention
 
 # Edit the Justfile to set your S3 configuration:
 # S3_BUCKET := "your-bucket"
 # S3_PROJECT_PATH := "projects/your-project/datastore"
+
+# Configure S5CMD for performance (16 parallel workers by default):
+# S5CMD_FLAGS := "--numworkers 16"
+# Standard excludes applied: .DS_Store, __pycache__, *.pyc
 
 # Ensure AWS profile is configured
 # Example: export AWS_PROFILE=broad-imaging
@@ -318,8 +323,8 @@ pre-commit install --hook-type pre-commit --hook-type pre-push
 git pull
 
 # 2. Get latest data
-just pull-external  # Get reference data
-just pull          # Get processed results
+just get-inputs    # Get input data (external + profiles) from team S3
+just get-results   # Get processed results from team S3
 
 # 3. Check pipeline status
 just dry           # Preview what would run
@@ -332,12 +337,11 @@ For selective downloads:
 
 ```bash
 # Download specific run
-just pull-run specific-analysis
-
-
+just get-results-for specific-analysis
 
 # List available data
-s5cmd ls s3://bucket/path/
+just list-s3
+# Or directly: s5cmd ls s3://bucket/path/
 ```
 
 ### Running Your Analysis
@@ -351,7 +355,7 @@ s5cmd ls s3://bucket/path/
 
 ```bash
 # Push your analysis to S3
-just push-run your-analysis
+just put-results-for your-analysis
 
 # Commit code changes
 git add notebooks/your-notebook.py
@@ -383,9 +387,9 @@ git push
 - **S3 data** → Use s5cmd directly
 - **All sources** → Integrate with Snakemake rules if part of pipeline
 
-#### External Data Import Pattern
+#### Unified Data Download Pattern
 
-Create `<PROJECT_NAME>/downloading/download_externals.py` to fetch reference data using Pooch:
+Create `<PROJECT_NAME>/downloading/download_data.py` to fetch both external reference data and profile files using Pooch with SHA256 verification:
 
 ```python
 import pooch
@@ -393,20 +397,38 @@ from pathlib import Path
 from loguru import logger
 
 EXTERNAL_DIR = Path("data/external")
+PROFILES_DIR = Path("data/raw/profiles")
 
-FILES = {
-    "https://github.com/jump-cellpainting/datasets/raw/main/metadata/compound.csv.gz": "compound.csv.gz",
-    "https://github.com/jump-cellpainting/datasets/raw/main/metadata/plate.csv.gz": "plate.csv.gz",
-    # Add more URLs as needed
+# External files with SHA256 hashes for integrity
+EXTERNAL_FILES = {
+    "https://github.com/jump-cellpainting/datasets/raw/main/metadata/compound.csv.gz": (
+        "compound.csv.gz",
+        "8885960e92ebd99eb33699a79129f517e668d78dd94f0d7478d39c9825bd3c0a",
+    ),
+    # Add more URLs with (filename, hash) tuples
+}
+
+# Profile files from CellPainting Gallery
+PROFILE_FILES = {
+    "https://cellpainting-gallery.s3.amazonaws.com/.../profiles.parquet": (
+        "profiles.parquet",
+        "fd54e2f1d7113e511e261715932f1efbd5a52d31d34fe6579a87c49f57682b85",
+    ),
 }
 
 MANUAL_FILES = ["manual_data.xlsx"]  # Files that need manual download
 
 def main():
+    # Download external files with hash verification
     EXTERNAL_DIR.mkdir(parents=True, exist_ok=True)
+    for url, (filename, hash_value) in EXTERNAL_FILES.items():
+        logger.info(f"Downloading {filename}")
+        pooch.retrieve(url=url, known_hash=hash_value, path=EXTERNAL_DIR, fname=filename)
 
-    for url, filename in FILES.items():
-        pooch.retrieve(url=url, known_hash=None, path=EXTERNAL_DIR, fname=filename)
+    # Download profile files
+    PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+    for url, (filename, hash_value) in PROFILE_FILES.items():
+        pooch.retrieve(url=url, known_hash=hash_value, path=PROFILES_DIR, fname=filename)
 
     for filename in MANUAL_FILES:
         if not (EXTERNAL_DIR / filename).exists():
@@ -419,42 +441,50 @@ if __name__ == "__main__":
 Run downloads:
 
 ```bash
-# Download all external data
-uv run python -m <PROJECT_NAME>.downloading.download_externals
+# Download all data from original sources (admin task)
+uv run python -m <PROJECT_NAME>.downloading.download_data
 
 # Or use the Justfile
-just download-externals
+just get-from-sources  # Downloads from original sources
+just put-inputs       # Uploads to team S3 (admin only)
+just get-inputs       # Downloads from team S3 (daily workflow)
 ```
 
-#### Integrating Downloads with Pipeline
+#### Data Management Workflow
 
-Add to `Snakefile` for automatic downloads:
+**Admin (one-time setup):**
 
-```python
-rule download_externals:
-    output:
-        directory("data/external/")
-    shell:
-        "uv run python -m <PROJECT_NAME>.downloading.download_externals"
+```bash
+just get-from-sources  # Download from original sources
+just put-inputs        # Upload to team S3 for sharing
 ```
+
+**Team (daily workflow):**
+
+```bash
+just get-inputs        # Download inputs from team S3
+just run               # Run pipeline
+just put-results       # Share results to team S3
+```
+
+The team S3 bucket becomes the single source of truth, eliminating metadata warnings and simplifying data management.
 
 ### Pipeline Management (Maintainers Only)
 
 ```bash
 # Check what would run (dry run)
 just dry
-# or: snakemake --dry-run
+# or: snakemake --dry-run --cores 4
 
-# Update external data
-just download-externals
-# or: just pull-external
+# Get latest input data from team S3
+just get-inputs
 
 # Run full pipeline
 just run
-# or: snakemake --cores 4
+# or: snakemake --cores 4 --printshellcmds
 
-# Push all results
-just push
+# Push all results to team S3
+just put-results
 
 # Commit changes
 git add .
