@@ -29,7 +29,7 @@
 - [Data-analysis strategies for image-based cell profiling](https://www.nature.com/articles/nmeth.4397) - Introduces key analysis steps
 - [Applications in image-based profiling of perturbations](https://www.sciencedirect.com/science/article/pii/S0958166916301112) - Describes common applications
 - [Cell Painting: a decade of discovery and innovation in cellular imaging](https://www.nature.com/articles/s41592-024-02528-8) - Systematic review of Cell Painting
-- [Cell Painting protocol](https://www.nature.com/articles/s41596-023-00840-9) - Detailed protocol
+- [Cell Painting protocol](https://www.nature.com/articles/s41596-023-00840-9) and [wiki](http://broad.io/CellPaintingWiki).
 
 ## Analysis Tools & Libraries
 
