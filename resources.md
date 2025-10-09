@@ -1,42 +1,16 @@
 # Resources
 
 > [!NOTE]
-> Some links in this document require Broad Institute access. These are marked with 🔒.
+> 🔒 = Broad Institute access required
+> 🟢 = Actively maintained (2023-2025)
+> 🟡 = Valuable foundations, supplement with modern content
+> Last updated: October 2025
 
 ## Internal Resources
 
 - Internal paper PDFs: [Google Drive folder](https://drive.google.com/drive/u/0/folders/1OWH25SMhGiXc_TGIhIEc2lxRRX-99Vxr) 🔒
 - Biology 101: [Internal wiki resources](https://new.ipwiki.app/orientation_to_the_imaging_platform#biology) 🔒
 - Slack discussion on data analysis: [discussion](https://broadinstitute.slack.com/archives/G01EEQFNZD0/p1658843416312999) 🔒
-
-## Scientific Literature
-
-### Image-based Profiling Essentials
-
-- [Image-based profiling: due for a machine-learning upgrade?](https://www.nature.com/articles/s41573-020-00117-w) - 2020 review of applications in image-based profiling
-- [Data-analysis strategies for image-based cell profiling](https://www.nature.com/articles/nmeth.4397) - Introduces key analysis steps
-- [Applications in image-based profiling of perturbations](https://www.sciencedirect.com/science/article/pii/S0958166916301112) - Describes common applications
-- [Cell Painting: a decade of discovery and innovation in cellular imaging](https://www.nature.com/articles/s41592-024-02528-8) - Systematic review of Cell Painting
-- [Cell Painting protocol](https://www.nature.com/articles/s41596-023-00840-9) and [wiki](http://broad.io/CellPaintingWiki).
-
-## Analysis Tools & Libraries
-
-### Profiling Libraries
-
-- **pycytominer**: Core library for image-based profiling ([GitHub](https://github.com/cytomining/pycytominer))
-- **copairs**: Evaluation metrics for profiling ([GitHub](https://github.com/cytomining/copairs))
-- More tools at [https://github.com/cytomining/](https://github.com/cytomining/)
-
-### Deep Learning
-
-- **DeepProfiler**: Deep learning for image-based profiling ([GitHub](https://github.com/cytomining/DeepProfiler))
-
-## Learning Resources for Computational Biology
-
-> [!NOTE]
-> Resources marked with 🟢 are actively maintained and current (2023-2025).
-> Resources marked with 🟡 are valuable for foundational concepts but should be supplemented with modern content.
-> Last updated: October 2025
 
 ## Foundations
 
@@ -72,14 +46,25 @@
 
 ## Image-Based Profiling
 
-### Understanding Profiles & Protocols
+### Key Papers & Reviews
 
-- [Cell Painting Protocol Version 3 (2023)](https://www.nature.com/articles/s41596-023-00840-9) 🟢 - Current gold standard, quantitatively optimized
-- [JUMP Cell Painting Consortium](https://jump-cellpainting.broadinstitute.org/) 🟢 - Largest public Cell Painting dataset with extensive documentation
-- [Pycytominer](https://github.com/cytomining/pycytominer) 🟢 - Python package for reproducible image-based profiling (Nature Methods 2025)
-- [Cytomining Profiling Handbook](https://cytomining.github.io/) 🟢 - Living resource for image-based profiling best practices
+- [Cell Painting: a decade of discovery and innovation in cellular imaging](https://www.nature.com/articles/s41592-024-02528-8) 🟢 - 2024 systematic review of Cell Painting
 - [Progress and new challenges in image-based profiling](https://arxiv.org/abs/2508.00097) 🟢 - August 2025 comprehensive review
+- [Image-based profiling: due for a machine-learning upgrade?](https://www.nature.com/articles/s41573-020-00117-w) 🟡 - 2020 review of ML applications in image-based profiling
+- [Data-analysis strategies for image-based cell profiling](https://www.nature.com/articles/nmeth.4397) 🟡 - 2016 Nature Methods, introduces key analysis steps
+- [Applications in image-based profiling of perturbations](https://www.sciencedirect.com/science/article/pii/S0958166916301112) 🟡 - 2016 review describing common applications
+
+### Protocols & Resources
+
+- [Cell Painting Protocol Version 3 (2023)](https://www.nature.com/articles/s41596-023-00840-9) and [wiki](http://broad.io/CellPaintingWiki) 🟢 - Current gold standard protocol, quantitatively optimized
+- [JUMP Cell Painting Consortium](https://jump-cellpainting.broadinstitute.org/) 🟢 - Largest public Cell Painting dataset with extensive documentation
+- [Cytomining Profiling Handbook](https://cytomining.github.io/) 🟢 - Data processing handbook for image-based profiling 
 - [Interpreting image-based profiles](https://carpenter-singh-lab.broadinstitute.org/blog/help-interpreting-image-based-profiles) 🟢 - Blog post with practical guidance
+
+### Software & Tools
+
+- [Pycytominer](https://github.com/cytomining/pycytominer) 🟢 - Python package for reproducible image-based profiling (Nature Methods 2025)
+- [copairs](https://github.com/cytomining/copairs) 🟢 - Python package for evaluating profile strength and similarity (Nature Comm 2025)
 
 ### Courses & Workshops
 
@@ -136,46 +121,41 @@
 
 ### Modern Textbooks (2023-2025)
 
-- [Understanding Deep Learning](https://udlbook.github.io/udlbook/) 🟢 - Simon Prince 2023, free online with Jupyter notebooks, covers transformers and modern architectures
+- [Understanding Deep Learning](https://udlbook.github.io/udlbook/) 🟢 - Simon Prince 2023, free online with Jupyter notebooks, covers CNNs, RNNs, transformers, and diffusion models
 - [The Little Book of Deep Learning](https://fleuret.org/public/lbdl.pdf) 🟢 - François Fleuret 2024, concise 140 pages explicitly covering attention, transformers, diffusion models
-- [Dive into Deep Learning (d2l.ai)](http://www.d2l.ai/) 🟢 - Interactive textbook with transformer chapters
+- [Dive into Deep Learning (d2l.ai)](http://www.d2l.ai/) 🟢 - Interactive textbook with chapters on CNNs, RNNs, attention mechanisms, and transformers
 
 ### Courses
 
-- [Stanford CS231n: Deep Learning for Computer Vision](https://cs231n.stanford.edu/) 🟢 - Spring 2025, actively maintained with PyTorch and transformers
-- [MIT 6.S191: Introduction to Deep Learning](http://introtodeeplearning.com/) 🟢 - Updated annually, 2024-2025 materials
-- [Fast.ai Practical Deep Learning](https://course.fast.ai/) 🟢 - 2024 updated course
+- [Stanford CS231n: Deep Learning for Computer Vision](https://cs231n.stanford.edu/) 🟢 - Spring 2025, actively maintained with PyTorch, CNNs, and transformers
+- [MIT 6.S191: Introduction to Deep Learning](http://introtodeeplearning.com/) 🟢 - Updated annually, 2024-2025 materials including transformers and modern architectures
+- [Fast.ai Practical Deep Learning](https://course.fast.ai/) 🟢 - 2024 updated course with practical implementations
+- [Stanford CS25: Transformers United](https://web.stanford.edu/class/cs25/) 🟢 - Dedicated course on transformer architectures and applications
 
 ### Visual Explanations
 
-- [3Blue1Brown: Neural Networks](https://www.3blue1brown.com/topics/neural-networks) 🟢 - Original 2017 series PLUS 2024 content on GPT, attention, and transformers - continuously updated
+- [3Blue1Brown: Neural Networks](https://www.3blue1brown.com/topics/neural-networks) 🟢 - Original 2017 series on neural networks, backpropagation, PLUS 2024 content on GPT, attention mechanisms, and transformers
+- [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/) 🟢 - Best visual explanation of transformer architecture
 - [colah's blog](http://colah.github.io) 🟡 - Excellent for LSTM/RNN understanding and convolution fundamentals (2015, pre-transformer)
 
-### Resources & Historical Context
+### Key Papers & Implementations
 
-- [Deep Learning Nature Review](http://www.nature.com/nature/journal/v521/n7553/abs/nature14539.html) 🟡 - LeCun, Bengio, Hinton 2015 overview
-- [Stanford CS231n Notes](http://cs231n.github.io) 🟢 - Comprehensive notes on neural networks
+- [Attention is All You Need](https://arxiv.org/abs/1706.03762) 🟢 - Vaswani et al. 2017, the original transformer paper
+- [The Annotated Transformer](http://nlp.seas.harvard.edu/annotated-transformer/) 🟢 - Line-by-line PyTorch implementation with explanations
+- [Deep Learning Nature Review](http://www.nature.com/nature/journal/v521/n7553/abs/nature14539.html) 🟡 - LeCun, Bengio, Hinton 2015 overview (pre-transformer)
+- [Stanford CS231n Notes](http://cs231n.github.io) 🟢 - Comprehensive notes on neural networks and architectures
 
 ### Biology-Specific Deep Learning
 
-- [AlphaFold 2 Paper](https://www.nature.com/articles/s41586-021-03819-2) 🟢 - Nature 2021, revolutionary protein structure prediction
+- [AlphaFold 2 Paper](https://www.nature.com/articles/s41586-021-03819-2) 🟢 - Nature 2021, revolutionary protein structure prediction using attention mechanisms
 - [AlphaFold 3 Paper](https://www.nature.com/articles/s41586-024-07487-w) 🟢 - Nature 2024, protein-DNA/RNA/ligand interactions (Nobel Prize Chemistry 2024)
 - [Nature Reviews: Deep Learning in Biology](https://www.nature.com/subjects/machine-learning/nrg) 🟢 - Continuously published series
 - [Deep Learning for Computational Biology](https://www.embopress.org/doi/full/10.15252/msb.20156651) 🟡 - 2016 review, foundational overview
 
-## Modern Topics (Post-2020)
+## AI in Drug Discovery & Biology
 
-### Transformers & Foundation Models
-
-- [Attention is All You Need](https://arxiv.org/abs/1706.03762) 🟢 - Original transformer paper (2017)
-- [The Annotated Transformer](http://nlp.seas.harvard.edu/annotated-transformer/) 🟢 - Line-by-line PyTorch implementation
-- [3Blue1Brown: Visualizing Attention](https://www.3blue1brown.com/lessons/attention) 🟢 - April 2024 visual explanation
-
-### AI in Drug Discovery & Biology
-
-- [AI in Drug Discovery: Recent Advances](https://pmc.ncbi.nlm.nih.gov/articles/PMC11800368/) 🟢 - 2025 PMC review
-- Protein language models: ESM, ProtTrans
-- AlphaFold database and applications
+> ![NOTE]
+> Contributions are welcome!
 
 ## Community & Staying Current
 
@@ -218,24 +198,3 @@
 
 - [AI/ML Cheatsheets](https://github.com/kailashahirwar/cheatsheets-ai) 🟢 - Quick reference for various packages
 - Reddit communities: r/MachineLearning, r/bioinformatics, r/computational_biology - for real-time discussions and tool recommendations
-
-## General Principles
-
-### Troubleshooting
-
-Follow the 30-minute rule: Try to solve issues independently for ~30 minutes before asking for help ([group norm](https://broadinstitute.slack.com/archives/C3PNSTV09/p1621283882195500) 🔒).
-
-1. Search existing resources:
-   - Slack archives
-   - GitHub issues
-   - Lab documentation
-   - Official tool/library documentation
-2. Try automated help (Google, AI tools with appropriate caution)
-3. Post in relevant Slack channels:
-   - #ip-it for computing
-   - #ip-profiling for data science
-   - #ip-dear-computer-scientist for computer science
-   - #ip-dear_biologist for biology
-4. Explain what you've already tried and where you're stuck
-5. Escalate to PIs or senior lab members if still blocked
-6. Document your solution for future reference
