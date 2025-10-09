@@ -148,24 +148,12 @@
 
 ### Newsletters & Blogs
 
-#### Tier 1: Essential
-
 - [Decoding Bio](https://www.decodingbio.com/) ⚠️ - Weekly BioByte newsletter, 10,000+ subscribers, community-led AI×bio translations
 - [In the Pipeline](https://www.science.org/blogs/pipeline) - Derek Lowe's legendary 23-year pharma/drug discovery blog (daily, October 2025 active)
 - [Century of Bio](https://centuryofbio.com/) - Elliot Hershberg's best-in-class deep dives on biotech companies and technologies
-
-#### Tier 2: Highly Recommended
-
 - [Where Tech Meets Bio](https://www.techlifesci.com/subscribe) - Weekly AI/biotech/drug discovery trends by Andrii Buvailo
 - [Scaling Biotech](https://scalingbiotech.substack.com/) - Jesse Johnson on AI/ML integration into biotech
 - [Alex Telford's Blog](https://atelfo.github.io/) ⚠️ - Strategic analysis of biotech industry, innovation, business models
-
-#### Tier 3: Specialized
-
 - [Owl Posting](https://www.owlposting.com/) - Technical research updates on computational biology and ML (Abhishaike Mahajan)
 - [Code to Cure](https://wyss.harvard.edu/news/from-data-to-drugs-the-role-of-artificial-intelligence-in-drug-discovery/) ⚠️ - Wyss Institute on AI×biology×healthcare
 
-### Additional Resources
-
-- [AI/ML Cheatsheets](https://github.com/kailashahirwar/cheatsheets-ai) 🟢 - Quick reference for various packages
-- Reddit communities: r/MachineLearning, r/bioinformatics, r/computational_biology - for real-time discussions and tool recommendations
