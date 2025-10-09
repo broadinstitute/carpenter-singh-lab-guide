@@ -26,8 +26,6 @@
 
 #### General Programming
 
-- [Coursera: Bioinformatics Specialization](https://www.coursera.org/specializations/bioinformatics) 🟢 - UC San Diego, 7 courses covering algorithms for DNA sequencing, genome assembly, and more
-- [Coursera: Genomic Data Science Specialization](https://www.coursera.org/specializations/genomic-data-science) 🟢 - Johns Hopkins, 8 courses on command line, Python, R, Bioconductor
 - [Rosalind](http://rosalind.info/) 🟢 - Interactive problem-solving platform for bioinformatics
 
 ### Statistics
@@ -92,6 +90,9 @@
 
 ### Foundations & Best Practices
 
+> ![NOTE]
+> Add image-based profiling-specific resources
+
 - [Navigating the pitfalls of applying machine learning in genomics](https://www.nature.com/articles/s41576-021-00434-9) 🟢 - Nature Reviews Genetics 2021, essential for avoiding data leakage, batch effects, overfitting (1000+ citations)
 - [R2D3 Visual Introduction to Machine Learning](http://www.r2d3.us/visual-intro-to-machine-learning-part-1/) 🟡 - Outstanding interactive visualizations of decision trees and bias-variance tradeoff
 
@@ -111,7 +112,6 @@
 ### Biology-Specific ML
 
 - [MIT 6.874: Deep Learning in the Life Sciences](https://mit6874.github.io/) 🟢 - Genomics, protein structure, drug discovery applications
-- [MLCB/MLSB Conferences](https://www.mlcb.org/) 🟢 - Machine Learning in Computational Biology proceedings
 - [UIUC CS582: Machine Learning for Bioinformatics](https://gelab-uiuc.github.io/cs582mlb/) 🟢 - Fall 2025 course materials
 - [A guide to machine learning for biologists](https://www.nature.com/articles/s41580-021-00407-0) 🟢 - Nature Reviews 2021
 
@@ -151,7 +151,7 @@
 ### Biology-Specific Deep Learning
 
 > ![NOTE]
-> Missing semimal DL papers in image-based profiling + image analysis
+> Add image-based profiling-specific resources
 
 - [AlphaFold 3 Paper](https://www.nature.com/articles/s41586-024-07487-w) 🟢 - Nature 2024, protein-DNA/RNA/ligand interactions (Nobel Prize Chemistry 2024)
 - [Nature Reviews: Deep Learning in Biology](https://www.nature.com/subjects/machine-learning/nrg) 🟢 - Continuously published series
