@@ -1,9 +1,9 @@
 # Resources
 
 > [!NOTE]
-> 🔒 = Broad Institute access required
-> 🟢 = Actively maintained (2023-2025)
-> 🟡 = Valuable foundations, supplement with modern content
+> 🔒 = Broad Institute access required.
+> 🟢 = Actively maintained (2023-2025).
+> 🟡 = Valuable foundations, supplement with modern content.
 > Last updated: October 2025
 
 ## Internal Resources
@@ -13,6 +13,9 @@
 - Slack discussion on data analysis: [discussion](https://broadinstitute.slack.com/archives/G01EEQFNZD0/p1658843416312999) 🔒
 
 ## Foundations
+
+> [!CAUTION]
+> Some resources were added based [feedback](https://github.com/broadinstitute/carpenter-singh-lab-guide/pull/13#issuecomment-3386612560) from Claude Research, and have not yet been fully vetted.
 
 ### Command Line & Programming
 
@@ -147,7 +150,9 @@
 
 ### Biology-Specific Deep Learning
 
-- [AlphaFold 2 Paper](https://www.nature.com/articles/s41586-021-03819-2) 🟢 - Nature 2021, revolutionary protein structure prediction using attention mechanisms
+> ![NOTE]
+> Missing semimal DL papers in image-based profiling + image analysis
+ 
 - [AlphaFold 3 Paper](https://www.nature.com/articles/s41586-024-07487-w) 🟢 - Nature 2024, protein-DNA/RNA/ligand interactions (Nobel Prize Chemistry 2024)
 - [Nature Reviews: Deep Learning in Biology](https://www.nature.com/subjects/machine-learning/nrg) 🟢 - Continuously published series
 - [Deep Learning for Computational Biology](https://www.embopress.org/doi/full/10.15252/msb.20156651) 🟡 - 2016 review, foundational overview
