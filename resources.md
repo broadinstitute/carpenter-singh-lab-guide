@@ -152,7 +152,7 @@
 
 > ![NOTE]
 > Missing semimal DL papers in image-based profiling + image analysis
- 
+
 - [AlphaFold 3 Paper](https://www.nature.com/articles/s41586-024-07487-w) 🟢 - Nature 2024, protein-DNA/RNA/ligand interactions (Nobel Prize Chemistry 2024)
 - [Nature Reviews: Deep Learning in Biology](https://www.nature.com/subjects/machine-learning/nrg) 🟢 - Continuously published series
 - [Deep Learning for Computational Biology](https://www.embopress.org/doi/full/10.15252/msb.20156651) 🟡 - 2016 review, foundational overview
