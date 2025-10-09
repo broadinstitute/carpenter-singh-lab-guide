@@ -9,18 +9,6 @@
 - Biology 101: [Internal wiki resources](https://new.ipwiki.app/orientation_to_the_imaging_platform#biology) 🔒
 - Slack discussion on data analysis: [discussion](https://broadinstitute.slack.com/archives/G01EEQFNZD0/p1658843416312999) 🔒
 
-## Educational Resources
-
-### Computing Skills
-
-- [The Missing Semester of Your CS Education](https://missing.csail.mit.edu/)
-- [The Unix Workbench](https://www.coursera.org/learn/unix)
-- [Data Science Cheatsheet](https://github.com/aaronwangy/Data-Science-Cheatsheet)
-
-### Textbooks
-
-- [Data Analysis for the Life Sciences](https://leanpub.com/dataanalysisforthelifesciences)
-
 ## Scientific Literature
 
 ### Image-based Profiling Essentials
@@ -43,19 +31,26 @@
 
 - **DeepProfiler**: Deep learning for image-based profiling ([GitHub](https://github.com/cytomining/DeepProfiler))
 
-### Learning Resources
-
-- [Profiling Handbook](https://cytomining.github.io/profiling-handbook/) - Step-by-step instructions for producing image-based profiles from raw images
-- [LINCS Workflow](https://github.com/broadinstitute/lincs-cell-painting/tree/e9737c3e4e4443eb03c2c278a145f12efe255756/profiles#workflow) - Workflow diagram of image-based profiling
-
 ## Learning Paths
 
 > [!NOTE]
 > These resources were primarily curated 2015-2021 and may be outdated.
-> They remain useful for foundational concepts, but verify current best practices before deep diving. 
+> They remain useful for foundational concepts, but verify current best practices before deep diving.
 > Updates welcome via PR.
 
 Curated educational resources organized by topic. These complement the scientific literature above and are designed to help lab members build foundational knowledge.
+
+### Getting Started
+
+#### Essential Skills for New Lab Members
+
+- [The Missing Semester of Your CS Education](https://missing.csail.mit.edu/) - Command line, version control, and essential tools
+- [The Unix Workbench](https://www.coursera.org/learn/unix) - Comprehensive Unix tutorial
+- [Data Science Cheatsheet](https://github.com/aaronwangy/Data-Science-Cheatsheet) - Quick reference
+
+#### Foundational Textbooks
+
+- [Data Analysis for the Life Sciences](https://leanpub.com/dataanalysisforthelifesciences)
 
 ### Image-based Profiling
 
@@ -63,6 +58,11 @@ Curated educational resources organized by topic. These complement the scientifi
 
 - [Interpreting image-based profiles](https://carpenter-singh-lab.broadinstitute.org/blog/help-interpreting-image-based-profiles) - Blog post with practical guidance
 - [Profile interpretation strategies](https://zenodo.org/record/7348094#.Y34QIuzMKrN) - Protocol preprint
+
+#### Workflows & Handbooks
+
+- [Profiling Handbook](https://cytomining.github.io/profiling-handbook/) - Step-by-step instructions for producing image-based profiles from raw images
+- [LINCS Workflow](https://github.com/broadinstitute/lincs-cell-painting/tree/e9737c3e4e4443eb03c2c278a145f12efe255756/profiles#workflow) - Workflow diagram of image-based profiling
 
 #### Course Materials
 
@@ -88,7 +88,6 @@ Curated educational resources organized by topic. These complement the scientifi
 #### Command Line
 
 - [Command Line Bootcamp](http://command-line-bootcamp.wurmlab.com/) - Interactive tutorial
-- [The Missing Semester of Your CS Education](https://missing.csail.mit.edu/) - Command line, version control, and essential tools
 
 #### General Programming
 
