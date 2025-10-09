@@ -30,7 +30,7 @@
 
 #### Core Texts
 
-- [A Computer Scientist's Guide to Cell Biology (2nd Edition, 2024)](https://link.springer.com/book/10.1007/978-3-031-55907-5) 🟢 - Updated with CRISPR, NGS, mRNA vaccines, COVID-19 developments
+- [A Computer Scientist's Guide to Cell Biology (2nd Edition, 2024)](https://link.springer.com/book/10.1007/978-3-031-55907-5) [pdf](https://www.cs.cmu.edu/~wcohen/GuideToBiology-sampleChapter-release1.4.pdf) [hack news](https://news.ycombinator.com/item?id=10961440) 🟢 - Updated with CRISPR, NGS, mRNA vaccines, COVID-19 developments
 - [A Primer for Computational Biology](https://open.oregonstate.education/computationalbiology/) 🟡 - Useful for Unix/command line basics, but Python content is dated (archived 2019)
 - [Nature Biotechnology Primers](https://www.nature.com/collections/tmdlscdqmc) ⚠️ - Continuously updated series covering ML for biology, single-cell methods, spatial transcriptomics, CRISPR
 
