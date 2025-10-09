@@ -37,6 +37,7 @@ Before finalizing any changes:
 - Ensure all bash commands use proper escaping and line continuations
 - Verify that Python/YAML/TOML code blocks have correct syntax
 - Check that any new commands follow the established patterns in the document
+- Check for broken links: `nix shell nixpkgs#lychee` then `lychee <filename>.md` (403 errors from Udacity are false positives)
 
 ## Repository Structure
 
