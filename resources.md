@@ -1,10 +1,12 @@
 # Resources
 
 > [!NOTE]
-> 🔒 = Broad Institute access required.
-> 🟢 = Actively maintained (2023-2025).
-> 🟡 = Valuable foundations, supplement with modern content.
-> Last updated: October 2025
+>
+> - 🔒 = Broad Institute access required
+> - 🟢 = Current and recommended (2020-2025 papers; actively maintained courses/tools)
+> - 🟡 = Foundational but older (still valuable, supplement with modern content)
+> - ⚠️ = Unvetted content ([see context](https://github.com/broadinstitute/carpenter-singh-lab-guide/pull/13#issuecomment-3386612560))
+> - Last updated: October 2025
 
 ## Internal Resources
 
@@ -14,24 +16,15 @@
 
 ## Foundations
 
-> [!CAUTION]
-> Some resources were added based [feedback](https://github.com/broadinstitute/carpenter-singh-lab-guide/pull/13#issuecomment-3386612560) from Claude Research, and have not yet been fully vetted.
-
 ### Command Line & Programming
-
-#### Command Line
 
 - [The Missing Semester of Your CS Education](https://missing.csail.mit.edu/) 🟢 - Essential tools for shell, Git, Vim, debugging (2020 lectures remain current for fundamentals)
 - [Software Carpentry](https://software-carpentry.org/) 🟢 - Evidence-based programming workshops for scientists, actively maintained with lessons through 2025
-
-#### General Programming
-
-- [Rosalind](http://rosalind.info/) 🟢 - Interactive problem-solving platform for bioinformatics
+- [Rosalind](http://rosalind.info/) ⚠️ - Interactive problem-solving platform for bioinformatics
 
 ### Statistics
 
-- [Introduction to Modern Statistics (2nd Edition)](https://openintro-ims.netlify.app/) 🟢 - Free textbook updated October 2025, modern simulation-based inference with R
-- [Modern Statistics with R](http://www.modernstatisticswithr.com/) 🟢 - Updated March 2025, more advanced treatment
+- [All of Statistics](https://egrcc.github.io/docs/math/all-of-statistics.pdf) 🟡 - Classic compact book on statistics
 
 ### Biology for Computational Scientists
 
@@ -39,7 +32,7 @@
 
 - [A Computer Scientist's Guide to Cell Biology (2nd Edition, 2024)](https://link.springer.com/book/10.1007/978-3-031-55907-5) 🟢 - Updated with CRISPR, NGS, mRNA vaccines, COVID-19 developments
 - [A Primer for Computational Biology](https://open.oregonstate.education/computationalbiology/) 🟡 - Useful for Unix/command line basics, but Python content is dated (archived 2019)
-- [Nature Biotechnology Primers](https://www.nature.com/collections/tmdlscdqmc) 🟢 - Continuously updated series covering ML for biology, single-cell methods, spatial transcriptomics, CRISPR
+- [Nature Biotechnology Primers](https://www.nature.com/collections/tmdlscdqmc) ⚠️ - Continuously updated series covering ML for biology, single-cell methods, spatial transcriptomics, CRISPR
 
 #### Video Courses
 
@@ -82,79 +75,49 @@
 
 - [iBiology Bioimage Analysis Course](https://www.ibiology.org/online-biology-courses/bioimage-analysis-course/) 🟡 - Complete archived series, valuable foundations despite no new content since 2020
 - [iBiology Short Microscopy Series](https://www.ibiology.org/online-biology-courses/short-microscopy-series/) 🟡 - Intro to fluorescence microscopy, optical sectioning, cameras - fundamentals remain valid
-- [NEUBIAS Academy YouTube](https://www.youtube.com/@neubias) 🟢 - Active 2024-2025 webinars on modern tools (ZeroCostDL4Mic, ImJoy, TrackMate)
+- [NEUBIAS Academy YouTube](https://www.youtube.com/@neubias) ⚠️ - Active 2024-2025 webinars on modern tools (ZeroCostDL4Mic, ImJoy, TrackMate)
 - [I2K Conference YouTube](https://www.youtube.com/@I2KConference) 🟢 - Virtual I2K 2024 materials posted October 2024, premier bioimage analysis community
 - [COBA Center YouTube](https://www.youtube.com/@cobacenter) 🟢 - Active NIH-funded content on CellProfiler, ImageJ, Piximi
 
-## Machine Learning
+## Machine Learning & Deep Learning
 
 ### Foundations & Best Practices
 
-> ![NOTE]
-> Add image-based profiling-specific resources
-
-- [Navigating the pitfalls of applying machine learning in genomics](https://www.nature.com/articles/s41576-021-00434-9) 🟢 - Nature Reviews Genetics 2021, essential for avoiding data leakage, batch effects, overfitting (1000+ citations)
 - [R2D3 Visual Introduction to Machine Learning](http://www.r2d3.us/visual-intro-to-machine-learning-part-1/) 🟡 - Outstanding interactive visualizations of decision trees and bias-variance tradeoff
+- [StatQuest with Josh Starmer (YouTube)](https://www.youtube.com/@statquest) ⚠️ - Clear explanations of ML concepts including PCA, regularization, neural networks
+- [3Blue1Brown: Neural Networks](https://www.3blue1brown.com/topics/neural-networks) 🟢 - Original 2017 series on neural networks, backpropagation, PLUS 2024 content on GPT, attention mechanisms, and transformers
 
-### Introductory Courses
+### General Courses
 
 - [UC Berkeley Data8: Foundations of Data Science](http://data8.org/) 🟢 - Active through 2025, Python/Jupyter notebooks, accessible for beginners
-- [StatQuest with Josh Starmer (YouTube)](https://www.youtube.com/@statquest) 🟢 - Clear explanations of ML concepts including PCA, regularization, neural networks
-
-### Modern Architectures & Applications
-
-- [Hugging Face Course](https://huggingface.co/learn/nlp-course/chapter1/1) 🟢 - Transformers, LLMs, and modern NLP/foundation models
-- [Fast.ai: Practical Deep Learning](https://course.fast.ai/) 🟢 - Updated 2024, top-down teaching approach
-- [Stanford CS25: Transformers United](https://web.stanford.edu/class/cs25/) 🟢 - Dedicated course on transformer architectures
-- [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/) 🟢 - Best visual explanation of transformers
+- [Fast.ai: Practical Deep Learning](https://course.fast.ai/) ⚠️ - Updated 2024, top-down teaching approach
 - [DeepLearning.AI Specialization](https://www.deeplearning.ai/courses/deep-learning-specialization/) 🟢 - Andrew Ng's updated 2022+ courses
-
-### Biology-Specific ML
-
-- [MIT 6.874: Deep Learning in the Life Sciences](https://mit6874.github.io/) 🟢 - Genomics, protein structure, drug discovery applications
-- [UIUC CS582: Machine Learning for Bioinformatics](https://gelab-uiuc.github.io/cs582mlb/) 🟢 - Fall 2025 course materials
-- [A guide to machine learning for biologists](https://www.nature.com/articles/s41580-021-00407-0) 🟢 - Nature Reviews 2021
-
-## Deep Learning
-
-### Foundational Theory
-
-- [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) 🟡 - Michael Nielsen's book, best for understanding backpropagation mechanics (pre-transformer era)
-- [Deep Learning](http://www.deeplearningbook.org) 🟡 - Goodfellow, Bengio, Courville - excellent mathematical foundations, supplement Part III with post-2017 content
-
-### Modern Textbooks (2023-2025)
-
-- [Understanding Deep Learning](https://udlbook.github.io/udlbook/) 🟢 - Simon Prince 2023, free online with Jupyter notebooks, covers CNNs, RNNs, transformers, and diffusion models
-- [The Little Book of Deep Learning](https://fleuret.org/public/lbdl.pdf) 🟢 - François Fleuret 2024, concise 140 pages explicitly covering attention, transformers, diffusion models
-- [Dive into Deep Learning (d2l.ai)](http://www.d2l.ai/) 🟢 - Interactive textbook with chapters on CNNs, RNNs, attention mechanisms, and transformers
-
-### Courses
-
 - [Stanford CS231n: Deep Learning for Computer Vision](https://cs231n.stanford.edu/) 🟢 - Spring 2025, actively maintained with PyTorch, CNNs, and transformers
-- [MIT 6.S191: Introduction to Deep Learning](http://introtodeeplearning.com/) 🟢 - Updated annually, 2024-2025 materials including transformers and modern architectures
-- [Fast.ai Practical Deep Learning](https://course.fast.ai/) 🟢 - 2024 updated course with practical implementations
-- [Stanford CS25: Transformers United](https://web.stanford.edu/class/cs25/) 🟢 - Dedicated course on transformer architectures and applications
+- [MIT 6.S191: Introduction to Deep Learning](http://introtodeeplearning.com/) ⚠️ - Updated annually, 2024-2025 materials including transformers and modern architectures
 
-### Visual Explanations
+### Modern Architectures
 
-- [3Blue1Brown: Neural Networks](https://www.3blue1brown.com/topics/neural-networks) 🟢 - Original 2017 series on neural networks, backpropagation, PLUS 2024 content on GPT, attention mechanisms, and transformers
 - [The Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/) 🟢 - Best visual explanation of transformer architecture
-- [colah's blog](http://colah.github.io) 🟡 - Excellent for LSTM/RNN understanding and convolution fundamentals (2015, pre-transformer)
-
-### Key Papers & Implementations
-
+- [Stanford CS25: Transformers United](https://web.stanford.edu/class/cs25/) ⚠️ - Dedicated course on transformer architectures and applications
+- [Hugging Face Course](https://huggingface.co/learn/nlp-course/chapter1/1) ⚠️ - Transformers, LLMs, and modern NLP/foundation models
 - [Attention is All You Need](https://arxiv.org/abs/1706.03762) 🟢 - Vaswani et al. 2017, the original transformer paper
 - [The Annotated Transformer](http://nlp.seas.harvard.edu/annotated-transformer/) 🟢 - Line-by-line PyTorch implementation with explanations
-- [Deep Learning Nature Review](http://www.nature.com/nature/journal/v521/n7553/abs/nature14539.html) 🟡 - LeCun, Bengio, Hinton 2015 overview (pre-transformer)
+
+### Textbooks & Reference
+
+- [Understanding Deep Learning](https://udlbook.github.io/udlbook/) ⚠️ - Simon Prince 2023, free online with Jupyter notebooks, covers CNNs, RNNs, transformers, and diffusion models
+- [The Little Book of Deep Learning](https://fleuret.org/public/lbdl.pdf) 🟢 - François Fleuret 2024, concise 140 pages explicitly covering attention, transformers, diffusion models
+- [Dive into Deep Learning (d2l.ai)](http://www.d2l.ai/) ⚠️ - Interactive textbook with chapters on CNNs, RNNs, attention mechanisms, and transformers
 - [Stanford CS231n Notes](http://cs231n.github.io) 🟢 - Comprehensive notes on neural networks and architectures
+- [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) 🟡 - Michael Nielsen's book, best for understanding backpropagation mechanics (pre-transformer era)
+- [Deep Learning](http://www.deeplearningbook.org) 🟡 - Goodfellow, Bengio, Courville - excellent mathematical foundations, supplement Part III with post-2017 content
+- [colah's blog](http://colah.github.io) 🟡 - Excellent for LSTM/RNN understanding and convolution fundamentals (2015, pre-transformer)
 
-### Biology-Specific Deep Learning
+### Biology Applications
 
-> ![NOTE]
-> Add image-based profiling-specific resources
-
-- [AlphaFold 3 Paper](https://www.nature.com/articles/s41586-024-07487-w) 🟢 - Nature 2024, protein-DNA/RNA/ligand interactions (Nobel Prize Chemistry 2024)
-- [Nature Reviews: Deep Learning in Biology](https://www.nature.com/subjects/machine-learning/nrg) 🟢 - Continuously published series
+- [MIT 6.874: Deep Learning in the Life Sciences](https://mit6874.github.io/) ⚠️ - Genomics, protein structure, drug discovery applications
+- [A guide to machine learning for biologists](https://www.nature.com/articles/s41580-021-00407-0) 🟢 - Nature Reviews 2021
+- [AlphaFold 3 Paper](https://www.nature.com/articles/s41586-024-07487-w) ⚠️ - Nature 2024, protein-DNA/RNA/ligand interactions (Nobel Prize Chemistry 2024)
 - [Deep Learning for Computational Biology](https://www.embopress.org/doi/full/10.15252/msb.20156651) 🟡 - 2016 review, foundational overview
 
 ## AI in Drug Discovery & Biology
@@ -164,15 +127,18 @@
 
 ## Community & Staying Current
 
+> ![NOTE]
+> We do not use the 🟢 🟡 markers in this section because everything here is expected to be current (except a separate archives section)
+
 ### Podcasts
 
 #### Active Podcasts
 
-- [Raising Health](https://podcasts.apple.com/us/podcast/raising-health/id1529318900) 🟢 - a16z Bio + Health, 185 episodes through August 2025, premier biotech/computational biology podcast
-- [Ground Truths](https://podcasts.apple.com/us/podcast/ground-truths/id1728526108) 🟢 - Dr. Eric Topol on AI in healthcare, genomics, longevity (2025 active)
-- [NEJM AI Grand Rounds](https://ai-podcast.nejm.org/) 🟢 - Harvard Medical School's official AI in medicine podcast (2025 active)
-- [AI For Pharma Growth](https://podcasts.apple.com/us/podcast/ai-for-pharma-growth/id1616728442) 🟢 - Weekly updates on pharma/biotech AI implementation
-- [Artificial Intelligence in Drug Discovery](https://open.spotify.com/show/2feFcQR2ZnM9wKhtsMev30) 🟢 - ML/AI in drug development focus
+- [Raising Health](https://podcasts.apple.com/us/podcast/raising-health/id1529318900) - a16z Bio + Health, 185 episodes through August 2025, premier biotech/computational biology podcast
+- [Ground Truths](https://podcasts.apple.com/us/podcast/ground-truths/id1728526108) - Eric Topol on AI in healthcare, genomics, longevity (2025 active)
+- [NEJM AI Grand Rounds](https://ai-podcast.nejm.org/) ⚠️ - Harvard Medical School's official AI in medicine podcast (2025 active)
+- [AI For Pharma Growth](https://podcasts.apple.com/us/podcast/ai-for-pharma-growth/id1616728442) ⚠️ - Weekly updates on pharma/biotech AI implementation
+- [Artificial Intelligence in Drug Discovery](https://open.spotify.com/show/2feFcQR2ZnM9wKhtsMev30) ⚠️ - ML/AI in drug development focus
 
 #### Discontinued But Valuable Archives
 
@@ -184,20 +150,20 @@
 
 #### Tier 1: Essential
 
-- [Decoding Bio](https://www.decodingbio.com/) 🟢 - Weekly BioByte newsletter, 10,000+ subscribers, community-led AI×bio translations
-- [In the Pipeline](https://www.science.org/blogs/pipeline) 🟢 - Derek Lowe's legendary 23-year pharma/drug discovery blog (daily, October 2025 active)
-- [Century of Bio](https://centuryofbio.com/) 🟢 - Elliot Hershberg's best-in-class deep dives on biotech companies and technologies
+- [Decoding Bio](https://www.decodingbio.com/) ⚠️ - Weekly BioByte newsletter, 10,000+ subscribers, community-led AI×bio translations
+- [In the Pipeline](https://www.science.org/blogs/pipeline) - Derek Lowe's legendary 23-year pharma/drug discovery blog (daily, October 2025 active)
+- [Century of Bio](https://centuryofbio.com/) - Elliot Hershberg's best-in-class deep dives on biotech companies and technologies
 
 #### Tier 2: Highly Recommended
 
-- [Where Tech Meets Bio](https://www.techlifesci.com/subscribe) 🟢 - Weekly AI/biotech/drug discovery trends by Andrii Buvailo
-- [Scaling Biotech](https://scalingbiotech.substack.com/) 🟢 - Jesse Johnson on AI/ML integration into biotech
-- [Alex Telford's Blog](https://atelfo.github.io/) 🟢 - Strategic analysis of biotech industry, innovation, business models
+- [Where Tech Meets Bio](https://www.techlifesci.com/subscribe) - Weekly AI/biotech/drug discovery trends by Andrii Buvailo
+- [Scaling Biotech](https://scalingbiotech.substack.com/) - Jesse Johnson on AI/ML integration into biotech
+- [Alex Telford's Blog](https://atelfo.github.io/) ⚠️ - Strategic analysis of biotech industry, innovation, business models
 
 #### Tier 3: Specialized
 
-- [Owl Posting](https://www.owlposting.com/) 🟢 - Technical research updates on computational biology and ML (Abhishaike Mahajan)
-- [Code to Cure](https://wyss.harvard.edu/news/from-data-to-drugs-the-role-of-artificial-intelligence-in-drug-discovery/) 🟢 - Wyss Institute on AI×biology×healthcare
+- [Owl Posting](https://www.owlposting.com/) - Technical research updates on computational biology and ML (Abhishaike Mahajan)
+- [Code to Cure](https://wyss.harvard.edu/news/from-data-to-drugs-the-role-of-artificial-intelligence-in-drug-discovery/) ⚠️ - Wyss Institute on AI×biology×healthcare
 
 ### Additional Resources
 
