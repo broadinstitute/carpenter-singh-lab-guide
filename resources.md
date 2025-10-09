@@ -58,7 +58,7 @@
 
 - [Cell Painting Protocol Version 3 (2023)](https://www.nature.com/articles/s41596-023-00840-9) and [wiki](http://broad.io/CellPaintingWiki) 🟢 - Current gold standard protocol, quantitatively optimized
 - [JUMP Cell Painting Consortium](https://jump-cellpainting.broadinstitute.org/) 🟢 - Largest public Cell Painting dataset with extensive documentation
-- [Cytomining Profiling Handbook](https://cytomining.github.io/) 🟢 - Data processing handbook for image-based profiling 
+- [Cytomining Profiling Handbook](https://cytomining.github.io/) 🟢 - Data processing handbook for image-based profiling
 - [Interpreting image-based profiles](https://carpenter-singh-lab.broadinstitute.org/blog/help-interpreting-image-based-profiles) 🟢 - Blog post with practical guidance
 
 ### Software & Tools
