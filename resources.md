@@ -122,12 +122,12 @@
 
 ## AI in Drug Discovery & Biology
 
-> ![NOTE]
+> [!NOTE]
 > Contributions are welcome!
 
 ## Community & Staying Current
 
-> ![NOTE]
+> [1NOTE]
 > We do not use the 🟢 🟡 markers in this section because everything here is expected to be current (except a separate archives section)
 
 ### Podcasts
