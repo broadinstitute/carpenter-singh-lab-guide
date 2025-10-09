@@ -127,7 +127,7 @@
 
 ## Community & Staying Current
 
-> [1NOTE]
+> [!NOTE]
 > We do not use the 🟢 🟡 markers in this section because everything here is expected to be current (except a separate archives section)
 
 ### Podcasts
