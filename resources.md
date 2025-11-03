@@ -156,4 +156,3 @@
 - [Alex Telford's Blog](https://atelfo.github.io/) ⚠️ - Strategic analysis of biotech industry, innovation, business models
 - [Owl Posting](https://www.owlposting.com/) - Technical research updates on computational biology and ML (Abhishaike Mahajan)
 - [Code to Cure](https://wyss.harvard.edu/news/from-data-to-drugs-the-role-of-artificial-intelligence-in-drug-discovery/) ⚠️ - Wyss Institute on AI×biology×healthcare
-
