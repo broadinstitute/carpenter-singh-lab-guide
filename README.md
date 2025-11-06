@@ -17,5 +17,4 @@ It complements other resources:
 ## Documentation
 
 - **[Project Workflows](workflows.md)** - How we organize and run data science projects using Cookiecutter Data Science principles
-- **[Resources](resources.md)** - Scientific literature, tools, and educational materials for image-based profiling
 - **[Infrastructure](infrastructure.md)** - Computing resources, development environment, and internal tools
