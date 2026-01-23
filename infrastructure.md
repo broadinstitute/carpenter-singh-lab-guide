@@ -8,11 +8,11 @@
 ### Overview
 
 - **Macbook**: For most daily tasks
-- **DGX-1 / spirit / oppy servers**: For GPU computing
+- **DGX-1 / spirit / oppy servers**: For GPU computing FIXME: Now DGX-1 owned by C-lab
 - **AWS**: For specific project needs (use judiciously)
 - **Broad's compute cluster**: For easily parallelizable jobs
 
-### DGX-1 Server (GPU Computing)
+### DGX-1 Server (GPU Computing) FIXME: Now DGX-1 owned by C-lab, move this to deprecated 
 
 - Maintenance details: [https://github.com/broadinstitute/ip-chores/issues/25](https://github.com/broadinstitute/ip-chores/issues/25) 🔒
 - Quick start guide: [https://new.ipwiki.app/dgx-1](https://new.ipwiki.app/dgx-1) 🔒
@@ -44,7 +44,7 @@
 ### Package Management
 
 - Install applications using [brew](https://brew.sh/)
-- Use [uv](https://github.com/astral-sh/uv) for Python environment management
+- Use [uv](https://github.com/astral-sh/uv) for Python environment management FIXME: Also describe pixi
 
 ## Project Setup & Initialization
 
@@ -57,7 +57,7 @@ You will rarely need to initialize a project yourself, but here are the instruct
 
 #### For Non-Cimini Lab Projects
 
-1. [Create Imaging Platform Project List Item](https://new.ipwiki.app/image_analyst_onboarding_and_project_tracking#create_imaging_platform_project_list_item) 🔒
+1. [Create Imaging Platform Project List Item](https://new.ipwiki.app/image_analyst_onboarding_and_project_tracking#imaging_platform_project_list) 🔒
 2. [Send startup email](https://new.ipwiki.app/image_analyst_onboarding_and_project_tracking#send_startup_email) 🔒 - See this [blog post](https://carpenter-singh-lab.broadinstitute.org/blog/tracking-projects-with-gmail-tags-collaborating-through-email) for context
 3. Continue with "All Projects" steps below
 
