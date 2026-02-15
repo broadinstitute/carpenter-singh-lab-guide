@@ -635,14 +635,6 @@ git commit -m "fix: update pipeline with new data"
 git push
 ```
 
-**Development shortcut** — when iterating on annotations or config without re-running expensive downstream jobs:
-
-```bash
-# Rebuild database, then touch downstream outputs to prevent re-runs
-pixi run snakemake augment_metadata_db --cores 4
-pixi run snakemake --touch data/processed/expensive-output/.complete
-```
-
 **Coordination Protocol:**
 
 1. Announce in Slack before pipeline updates
