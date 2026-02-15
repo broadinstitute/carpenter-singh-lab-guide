@@ -74,8 +74,8 @@ Example progression:
 **Within each notebook**:
 
 - Read inputs from `data/interim/` or `data/external/`
-- Save all outputs to `data/processed/{your-analysis}/`
-- Organize outputs by type: `data/processed/{your-analysis}/figures/`, `/tables/`, etc.
+- Save all outputs to `data/processed/{your-name}/{your-analysis}/`
+- Organize outputs by type: `data/processed/{your-name}/{your-analysis}/figures/`, `/tables/`, etc.
 
 ## Project Setup
 
@@ -150,6 +150,8 @@ EXTERNAL_DIR := DATA_DIR + "/external"
 RAW_DIR := DATA_DIR + "/raw"
 INTERIM_DIR := DATA_DIR + "/interim"
 PROCESSED_DIR := DATA_DIR + "/processed"
+# Recycle location for files replaced/deleted during sync-based downloads
+RCLONE_BACKUP_DIR := PROCESSED_DIR + "/_recycle"
 
 # Default recipe (shows help)
 default:
@@ -319,7 +321,7 @@ Install hooks:
 
 ```bash
 # Install pre-commit hooks
-pre-commit install --hook-type pre-commit --hook-type pre-push
+pixi run pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
 #### 7. Create config and GPU modules
@@ -428,9 +430,9 @@ This section covers the standard workflow for team members working on existing p
 
 **Analysts/Scientists (most team members):**
 
-- Work in `data/processed/` - your personal workspace
+- Work in `data/processed/<your-name>/<analysis>/` - your personal workspace
 - Read from `data/interim/` - pipeline outputs
-- Never modify `raw/`, `external/`, or `interim/`
+- Never manually edit files in `raw/`, `external/`, or `interim/` (pipeline runs can regenerate `interim/`)
 
 **Data Maintainers (1-2 designated people):**
 
@@ -452,7 +454,7 @@ pixi install
 export AWS_PROFILE=your-profile
 # Example: export AWS_PROFILE=imaging-platform
 
-pre-commit install --hook-type pre-commit --hook-type pre-push
+pixi run pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
 ### Start Your Day
@@ -461,11 +463,15 @@ pre-commit install --hook-type pre-commit --hook-type pre-push
 # 1. Get code updates
 git pull
 
-# 2. Get latest data
+# 2. If you have local analysis outputs not yet shared, upload first
+# (avoids losing local-only files during sync)
+just put-results-for your-name/your-analysis
+
+# 3. Get latest data
 just get-inputs    # Get input data (external + profiles) from team S3
 just get-results   # Get processed results from team S3
 
-# 3. Check pipeline status
+# 4. Check pipeline status
 just dry           # Preview what would run
 # If it shows work to do: just run
 ```
@@ -476,7 +482,7 @@ For selective downloads:
 
 ```bash
 # Download specific run
-just get-results-for specific-analysis
+just get-results-for your-name/specific-analysis
 
 # List available data
 just list-s3
@@ -487,14 +493,14 @@ just list-s3
 
 1. **Create notebook**: `notebooks/1.01-abc-analysis-name.py`
 2. **Load data**: Read from `data/interim/`
-3. **Save outputs**: Write to `data/processed/your-analysis/`
+3. **Save outputs**: Write to `data/processed/your-name/your-analysis/`
 4. **Track experiment**: Create GitHub issue with hypothesis, link notebook, paste key figures
 
 ### Sharing Your Work
 
 ```bash
 # Push your analysis to S3
-just put-results-for your-analysis
+just put-results-for your-name/your-analysis
 
 # Commit code changes
 git add notebooks/your-notebook.py
@@ -523,9 +529,9 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 ### Core Principles
 
 1. **Pipeline manages foundation data**: `snakemake` processes raw/external → interim
-2. **Analysts work in processed/**: All personal analysis outputs go here
+2. **Analysts work in processed/**: Use `data/processed/<your-name>/<analysis>/` for personal analysis outputs
 3. **Data flows one way**: raw/external → interim → processed
-4. **Never edit upstream directories**: They're managed by the pipeline
+4. **Never manually edit upstream directories**: `raw/`, `external/`, and `interim/` are pipeline-managed
 5. **Maintainers coordinate updates**: Pipeline changes require coordination
 
 ### Adding New Data Sources (Maintainers Only)
@@ -710,8 +716,10 @@ put-results:
 get-results:
     @echo "Getting results from team S3..."
     @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
+    @stamp=$$(date +%Y%m%d-%H%M%S); \
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/interim" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/
+    @stamp=$$(date +%Y%m%d-%H%M%S); \
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/processed" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
 
 # Upload specific analysis results to team S3
 put-results-for run_path:
@@ -722,7 +730,8 @@ put-results-for run_path:
 get-results-for run_path:
     @echo "Getting results for: {{run_path}}"
     @mkdir -p {{PROCESSED_DIR}}/{{run_path}}
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/" {{PROCESSED_DIR}}/{{run_path}}/
+    @stamp=$$(date +%Y%m%d-%H%M%S); \
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/{{run_path}}" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/" {{PROCESSED_DIR}}/{{run_path}}/
 
 # ==================== CODE QUALITY ====================
 
@@ -754,7 +763,7 @@ list-s3:
 ```
 
 > [!WARNING]
-> **`rclone sync` vs `rclone copy`**: `get-inputs` and `get-results` use `rclone sync` which makes local match S3 exactly — local files not in S3 will be **deleted** (S3 is source of truth). `put-results` uses `rclone copy` which only adds/updates files on S3 without deleting — safe for shared buckets where multiple team members upload results.
+> **`rclone sync` vs `rclone copy`**: `get-inputs` and `get-results` use `rclone sync` which makes local match S3 exactly. In the recipes above, `get-results` and `get-results-for` use `--backup-dir` with `RCLONE_BACKUP_DIR` so replaced/deleted local files are moved into `data/processed/_recycle/<timestamp>/` instead of being permanently removed. `put-results` uses `rclone copy` which only adds/updates files on S3 without deleting — safe for shared buckets where multiple team members upload results.
 
 ### Example Projects
 
