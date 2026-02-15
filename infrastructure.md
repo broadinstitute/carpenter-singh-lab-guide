@@ -44,7 +44,8 @@
 ### Package Management
 
 - Install applications using [brew](https://brew.sh/)
-- Use [uv](https://github.com/astral-sh/uv) for Python environment management FIXME: Also describe pixi
+- Use [pixi](https://pixi.sh/) for project environment management (conda + pip dependencies, GPU support) — see [workflows](workflows.md#prerequisites) for details
+- Use [uv](https://github.com/astral-sh/uv) for standalone Python tooling outside of project environments
 
 ## Project Setup & Initialization
 

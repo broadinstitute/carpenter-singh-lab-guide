@@ -4,7 +4,7 @@
 > This workflow is being actively tested in our lab. Expect rough edges and please share feedback!
 
 > [!NOTE]
-> We use Justfile + Snakemake + rclone + s5cmd for data management. The Justfile provides a clean get/put interface for S3 operations (rclone for sync, s5cmd for listing). Snakemake handles pipeline execution. All data downloads include SHA256 hash verification for integrity.
+> We use Justfile + Snakemake + rclone + s5cmd for data management. The Justfile provides a clean get/put interface for S3 operations (rclone for sync, s5cmd for listing). Snakemake handles pipeline execution. Downloads from external sources use SHA256 hash verification via Pooch; S3 sync relies on rclone's checksum-based change detection.
 
 > [!NOTE]
 > Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides.
@@ -19,7 +19,7 @@ We follow [Cookiecutter Data Science](https://cookiecutter-data-science.drivenda
 2. **Raw data is immutable**: Never edit raw data directly
 3. **Clear separation of concerns**: Pipeline-managed data vs. personal analysis
 4. **Everything is reproducible**: Code + raw data = any output
-5. **Data integrity**: All downloaded files verified with SHA256 hashes
+5. **Data integrity**: External downloads verified with SHA256 hashes; S3 sync uses checksum-based change detection
 
 ### Directory Structure
 
@@ -126,15 +126,30 @@ S3_PREFIX := "s3://" + S3_BUCKET + "/" + S3_PROJECT_PATH
 CORES := env_var_or_default("CORES", "all")
 AWS_PROFILE := env_var_or_default("AWS_PROFILE", "default")
 
-# Rclone for sync (tracks changes, avoids re-downloads)
+# Rclone common flags
 RCLONE_FLAGS := env_var_or_default("RCLONE_FLAGS", "--transfers 16 --checkers 16")
-RCLONE_SYNC := "rclone sync " + RCLONE_FLAGS + " -v --stats-one-line --s3-provider=AWS --s3-env-auth --s3-region=us-east-1 --exclude '.DS_Store' --exclude '__pycache__/**' --exclude '*.pyc'"
+RCLONE_COMMON := RCLONE_FLAGS + " -v --stats-one-line --s3-provider=AWS --s3-env-auth --s3-region=us-east-1 --exclude '.DS_Store' --exclude '__pycache__/**' --exclude '*.pyc'"
+
+# rclone sync: makes destination match source exactly (DELETES extra files at destination)
+# Use for downloads — S3 is source of truth, local should match exactly
+RCLONE_SYNC := "rclone sync " + RCLONE_COMMON
+
+# rclone copy: adds/updates files without deleting anything at destination
+# Use for uploads — safe for shared S3 buckets
+RCLONE_COPY := "rclone copy " + RCLONE_COMMON
 
 # S5CMD for listing only (faster than rclone for browsing)
 S5CMD_FLAGS := env_var_or_default("S5CMD_FLAGS", "--numworkers 16")
 S5CMD := "s5cmd " + S5CMD_FLAGS
 
 SNAKEMAKE := "pixi run snakemake"
+
+# Directory names (following Cookiecutter Data Science structure)
+DATA_DIR := "data"
+EXTERNAL_DIR := DATA_DIR + "/external"
+RAW_DIR := DATA_DIR + "/raw"
+INTERIM_DIR := DATA_DIR + "/interim"
+PROCESSED_DIR := DATA_DIR + "/processed"
 
 # Default recipe (shows help)
 default:
@@ -178,16 +193,16 @@ Add to `pyproject.toml`:
 [project]
 name = "<PROJECT_NAME>"
 version = "0.1.0"
-requires-python = ">= 3.11"
+requires-python = ">= 3.12"
 dependencies = [
-    "pandas>=2.2,<3",
-    "loguru>=0.7,<0.8",
-    "typer>=0.21,<0.22",
-    "python-dotenv>=1.0,<2",
-    "pooch>=1.8,<2",
-    "snakemake>=9.9,<10",
-    "pre-commit>=4.5,<5",
-    "rust-just>=1.46,<2",
+    "pandas",
+    "loguru",
+    "typer",
+    "python-dotenv",
+    "pooch",
+    "snakemake",
+    "pre-commit",
+    "rust-just",
 ]
 
 [build-system]
@@ -198,8 +213,8 @@ requires = ["hatchling"]
 <PROJECT_NAME> = { path = ".", editable = true }
 
 [dependency-groups]
-lint = ["ruff>=0.12.0"]
-test = ["pytest>=8.4.0"]
+lint = ["ruff"]
+test = ["pytest"]
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
@@ -266,7 +281,7 @@ Create `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: check-added-large-files
@@ -277,7 +292,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.1
+    rev: v0.15.1
     hooks:
       - id: ruff
         args: [--fix]
@@ -305,9 +320,11 @@ from loguru import logger
 load_dotenv()
 
 # Support override via environment variable for development
+# <PROJECT_NAME_UPPER> = uppercased project name, e.g., JUMP_PRODUCTION_ROOT, OASIS_CELLPAINTING_ROOT
 if os.environ.get("<PROJECT_NAME_UPPER>_ROOT"):
     PROJ_ROOT = Path(os.environ["<PROJECT_NAME_UPPER>_ROOT"]).resolve()
 else:
+    # src/<PROJECT_NAME>/config.py → parents: [0]=pkg, [1]=src, [2]=project root
     PROJ_ROOT = Path(__file__).resolve().parents[2]
 logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
 
@@ -317,8 +334,11 @@ INTERIM_DATA_DIR = DATA_DIR / "interim"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
-# CPU count — respects Slurm, cgroups, and taskset limits
-CPUS: int = len(os.sched_getaffinity(0))
+# CPU count — respects Slurm/cgroups on Linux, falls back to os.cpu_count() on macOS
+try:
+    CPUS: int = len(os.sched_getaffinity(0))
+except AttributeError:
+    CPUS: int = os.cpu_count() or 1
 ```
 
 Create `src/<PROJECT_NAME>/gpu.py` (for projects with GPU workloads):
@@ -353,7 +373,7 @@ Usage: `from <PROJECT_NAME>.gpu import has_gpu; HAS_GPU = has_gpu()` — no `--n
 Create `Snakefile` with modular rule includes:
 
 ```python
-configfile: "configs/pipeline.yaml"  # if using pipeline config
+# configfile: "configs/pipeline.yaml"  # uncomment when you add pipeline config
 
 # Include modular rule files
 include: "rules/processing.smk"
@@ -651,11 +671,18 @@ get-inputs:
     @echo "Syncing profiles/..."
     AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/profiles/" {{RAW_DIR}}/profiles/
 
-# Upload your results to team S3
+# Upload your results to team S3 (non-destructive — adds/updates only)
 put-results:
     @echo "Uploading results to team S3..."
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} "{{INTERIM_DIR}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/"
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} "{{PROCESSED_DIR}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/"
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_COPY}} "{{INTERIM_DIR}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/"
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_COPY}} "{{PROCESSED_DIR}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/"
+
+# Download all results from team S3
+get-results:
+    @echo "Getting results from team S3..."
+    @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
 
 # ==================== CODE QUALITY ====================
 
@@ -687,7 +714,7 @@ list-s3:
 ```
 
 > [!WARNING]
-> `get-inputs` uses `rclone sync` which makes the local directory match S3 exactly — local files not present in S3 will be **deleted**. This is intentional (S3 is the source of truth) but be aware of it.
+> **`rclone sync` vs `rclone copy`**: `get-inputs` and `get-results` use `rclone sync` which makes local match S3 exactly — local files not in S3 will be **deleted** (S3 is source of truth). `put-results` uses `rclone copy` which only adds/updates files on S3 without deleting — safe for shared buckets where multiple team members upload results.
 
 ### Example Projects
 
