@@ -170,6 +170,7 @@ mkdir -p docs references
 
 # Add .gitkeep files to track empty directories
 touch data/{raw,external,interim,processed}/.gitkeep
+touch configs/.gitkeep scripts/.gitkeep tests/.gitkeep docs/.gitkeep
 touch notebooks/.gitkeep references/.gitkeep
 touch src/<PROJECT_NAME>/__init__.py
 touch README.md
@@ -231,7 +232,17 @@ Download Python gitignore template:
 curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 ```
 
-> **Note**: Add `data/` and `.snakemake/` to `.gitignore` to prevent accidentally committing large data files and Snakemake metadata.
+Append to `.gitignore` to prevent committing data files and Snakemake metadata while preserving the directory structure tracked via `.gitkeep`:
+
+```text
+# Data directory contents (structure tracked via .gitkeep)
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Snakemake metadata
+.snakemake/
+```
 
 #### 5. Configure Code Quality Tools
 
