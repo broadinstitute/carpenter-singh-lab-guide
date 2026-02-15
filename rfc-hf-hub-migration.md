@@ -69,26 +69,15 @@ Ask a maintainer to add you as a member.
 ### 2. Install tools
 
 ```bash
-# Add to your pixi dependencies
-pixi add huggingface_hub hf_xet
-
-# Or install standalone
-pip install -U huggingface_hub hf_xet
+# Add to your pixi dependencies (--pypi required — hf_xet is not on conda-forge)
+pixi add --pypi huggingface_hub hf_xet
 
 # Login (each team member, one-time)
-hf auth login
+pixi run hf auth login
 ```
 
-**Quick testing without installing**: Use `pixi exec` to run `hf` in a
-temporary environment. The CLI binary is `hf` (not `huggingface-cli`):
-
-```bash
-# Ad-hoc hf commands — nothing installed into your project
-pixi exec --spec huggingface_hub -c conda-forge -- hf version
-pixi exec --spec huggingface_hub -c conda-forge -- hf auth whoami
-
-# hf_xet is not on conda-forge — use pixi add or pip for Xet-accelerated transfers
-```
+The CLI binary is `hf` (not `huggingface-cli`). Since it's a project
+dependency, always run it via `pixi run hf` or from within `pixi shell`.
 
 ### 3. Project `.env` file
 
@@ -96,71 +85,89 @@ Each project needs a `.env` at the repo root (already in `.gitignore`):
 
 ```bash
 HF_PROJECT=myproject
-# HF_BRANCH=your-username  # defaults to `whoami` if unset
 ```
 
-### 4. Create repos for your project
+### 4. Create a repo for your project
 
-Each project gets one or more dataset repos on HF Hub. A natural mapping:
+Each project gets one dataset repo on HF Hub:
 
 ```bash
-# One repo per data layer keeps things clean
-hf repo create carpenter-singh-lab/myproject-inputs \
-  --repo-type dataset --private
-
-hf repo create carpenter-singh-lab/myproject-results \
+pixi run hf repo create carpenter-singh-lab/myproject \
   --repo-type dataset --private
 ```
 
-**Why two repos?** Inputs (raw + external) are read-only for most team members
-and change rarely. Results (interim + processed) change constantly. Separating
-them means you can give different access levels and avoid syncing huge input
-data when you only need results.
+The repo mirrors the local `data/` directory structure (`external/`, `raw/`,
+`interim/`, `processed/`). Use `--include` patterns in download/upload commands
+to sync only the layers you need.
 
-For very large projects you might also split by data type
-(e.g., `myproject-images`, `myproject-profiles`).
+For very large projects (millions of images), you may need to split across
+repos to stay under the 100k file limit.
 
 ### 5. Initial data upload
 
 ```bash
-# Upload existing input data
-hf upload carpenter-singh-lab/myproject-inputs ./data/external external/ \
+# Upload all data layers
+pixi run hf upload carpenter-singh-lab/myproject ./data/external external/ \
   --repo-type dataset --commit-message "Initial external data"
 
-hf upload carpenter-singh-lab/myproject-inputs ./data/raw raw/ \
+pixi run hf upload carpenter-singh-lab/myproject ./data/raw raw/ \
   --repo-type dataset --commit-message "Initial raw data"
 
-# Upload existing results
-hf upload carpenter-singh-lab/myproject-results ./data/interim interim/ \
+pixi run hf upload carpenter-singh-lab/myproject ./data/interim interim/ \
   --repo-type dataset --commit-message "Initial interim data"
 
-hf upload carpenter-singh-lab/myproject-results ./data/processed processed/ \
+pixi run hf upload carpenter-singh-lab/myproject ./data/processed processed/ \
   --repo-type dataset --commit-message "Initial processed results"
 ```
 
-For very large initial uploads that need `path_in_repo`, use `upload_folder`:
-
-```python
-from huggingface_hub import HfApi
-api = HfApi()
-api.upload_folder(
-    folder_path="./data/raw",
-    path_in_repo="raw",
-    repo_id="carpenter-singh-lab/myproject-inputs",
-    repo_type="dataset",
-)
-```
-
-For extremely large uploads (resumable across interruptions), use the CLI.
-Note: `upload-large-folder` always uploads to the repo root (no `path_in_repo`),
-so structure your local directory to match the desired repo layout:
+**Path mapping**: If your local directory layout doesn't match the desired repo
+layout, use `path_in_repo` to remap. For example, if your project stores
+profiles at `data/raw/profiles/` but the repo should have them at `profiles/`:
 
 ```bash
-hf upload-large-folder carpenter-singh-lab/myproject-inputs ./data/raw \
+pixi run hf upload carpenter-singh-lab/myproject ./data/raw/profiles profiles/ \
+  --repo-type dataset --commit-message "Initial profiles"
+```
+
+For very large initial uploads, use `upload_folder` (Python API) or
+`upload-large-folder` (CLI, resumable across interruptions):
+
+```bash
+pixi run hf upload-large-folder carpenter-singh-lab/myproject ./data/raw \
   --repo-type dataset --num-workers 16
 ```
 
-### 6. Justfile
+Note: `upload-large-folder` always uploads to the repo root (no
+`path_in_repo`), so structure your local directory to match the desired repo
+layout.
+
+### 6. Branching model
+
+**Same branch name on GitHub and HF Hub.** The HF branch is derived
+automatically from your current git branch:
+
+```text
+GitHub: main                    ←→  HF Hub: main
+GitHub: feat/batch-correction   ←→  HF Hub: feat/batch-correction
+```
+
+This means:
+
+- When you `git checkout -b feat/thing`, run `just branch-create` to create
+  the matching HF branch.
+- `just put-results` always pushes to the HF branch matching your current git
+  branch. It refuses to push if you're on `main` (use `put-results-main` or
+  `pr-create` instead).
+- `just get-results-from feat/thing` lets a teammate download your in-progress
+  data by branch name.
+- Commit messages on HF include the current git SHA for cross-repo traceability.
+
+**HF Hub PRs are not branch-to-branch merges.** Unlike GitHub, HF PRs use
+`refs/pr/N` refs. `just pr-create` uploads your current results as a new PR
+targeting main — it doesn't merge your HF branch into main. The branch is your
+working space; the PR is the merge request.
+
+### 7. Justfile
 
 ```just
 set dotenv-load := true
@@ -169,17 +176,20 @@ set dotenv-load := true
 # Hugging Face Hub configuration
 HF_ORG := "carpenter-singh-lab"
 HF_PROJECT := env_var_or_default("HF_PROJECT", "myproject")
-HF_INPUTS_REPO := HF_ORG + "/" + HF_PROJECT + "-inputs"
-HF_RESULTS_REPO := HF_ORG + "/" + HF_PROJECT + "-results"
+HF_REPO := HF_ORG + "/" + HF_PROJECT
 
-# Branch name defaults to system username
-HF_BRANCH := env_var_or_default("HF_BRANCH", `whoami`)
+# Branch name mirrors current git branch (override with HF_BRANCH env var)
+HF_BRANCH := env_var_or_default("HF_BRANCH", `git branch --show-current`)
+
+# Current git short SHA — included in HF commit messages for traceability
+GIT_SHA := `git rev-parse --short HEAD`
 
 # Patterns to exclude from uploads (each needs its own --exclude flag)
 HF_EXCLUDE := '--exclude "*.DS_Store" --exclude "__pycache__" --exclude "*.pyc" --exclude ".ipynb_checkpoints" --exclude "*.tmp"'
 
 CORES := env_var_or_default("CORES", "all")
 SNAKEMAKE := "pixi run snakemake"
+HF := "pixi run hf"
 
 # Directory names (unchanged from current workflow)
 DATA_DIR := "data"
@@ -195,16 +205,16 @@ default:
 
 # Create your working branch
 branch-create:
-    @echo "Creating branch '{{HF_BRANCH}}' on results repo..."
-    hf repo branch create {{HF_RESULTS_REPO}} {{HF_BRANCH}} --repo-type dataset
+    @echo "Creating branch '{{HF_BRANCH}}'..."
+    {{HF}} repo branch create {{HF_REPO}} {{HF_BRANCH}} --repo-type dataset
 
 # List all branches
 branch-list:
     #!/usr/bin/env bash
-    echo "Branches on {{HF_RESULTS_REPO}}:"
-    python3 -c "
+    echo "Branches on {{HF_REPO}}:"
+    pixi run python3 -c "
     from huggingface_hub import list_repo_refs
-    refs = list_repo_refs('{{HF_RESULTS_REPO}}', repo_type='dataset')
+    refs = list_repo_refs('{{HF_REPO}}', repo_type='dataset')
     for b in refs.branches:
         print(f'  {b.name}')
     "
@@ -224,93 +234,100 @@ dry:
 
 # Download input data from main (shared, read-only)
 get-inputs:
-    @echo "Downloading inputs from {{HF_INPUTS_REPO}} (main)..."
+    @echo "Downloading inputs from {{HF_REPO}} (main)..."
     @mkdir -p {{EXTERNAL_DIR}} {{RAW_DIR}}
-    hf download {{HF_INPUTS_REPO}} --repo-type dataset \
-      --include "external/*" --include "raw/*" \
+    {{HF}} download {{HF_REPO}} --repo-type dataset \
+      --include "external/**" --include "raw/**" \
       --local-dir {{DATA_DIR}}
 
 # Download results from main
 get-results:
-    @echo "Downloading results from {{HF_RESULTS_REPO}} (main)..."
+    @echo "Downloading results from {{HF_REPO}} (main)..."
     @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
-    hf download {{HF_RESULTS_REPO}} --repo-type dataset \
-      --include "interim/*" --include "processed/*" \
+    {{HF}} download {{HF_REPO}} --repo-type dataset \
+      --include "interim/**" --include "processed/**" \
       --local-dir {{DATA_DIR}}
 
 # Download results from a specific branch
 get-results-from branch:
     @echo "Downloading results from branch '{{branch}}'..."
     @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
-    hf download {{HF_RESULTS_REPO}} --repo-type dataset \
+    {{HF}} download {{HF_REPO}} --repo-type dataset \
       --revision {{branch}} \
-      --include "interim/*" --include "processed/*" \
+      --include "interim/**" --include "processed/**" \
       --local-dir {{DATA_DIR}}
 
 # Download specific analysis results
 get-results-for run_path:
     @echo "Downloading results for: {{run_path}}"
     @mkdir -p {{PROCESSED_DIR}}/{{run_path}}
-    hf download {{HF_RESULTS_REPO}} --repo-type dataset \
-      --include "processed/{{run_path}}/*" \
+    {{HF}} download {{HF_REPO}} --repo-type dataset \
+      --include "processed/{{run_path}}/**" \
       --local-dir {{DATA_DIR}}
 
 # Upload results to YOUR BRANCH (safe, isolated)
 put-results:
-    @echo "Uploading results to branch '{{HF_BRANCH}}'..."
-    hf upload {{HF_RESULTS_REPO}} {{INTERIM_DIR}} interim/ \
+    #!/usr/bin/env bash
+    if [ "{{HF_BRANCH}}" = "main" ]; then
+        echo "ERROR: Cannot push results directly to main. Use put-results-main or pr-create."
+        exit 1
+    fi
+    echo "Uploading results to branch '{{HF_BRANCH}}'..."
+    {{HF}} upload {{HF_REPO}} {{INTERIM_DIR}} interim/ \
       --repo-type dataset --revision {{HF_BRANCH}} \
       {{HF_EXCLUDE}} \
-      --commit-message "Update interim results"
-    hf upload {{HF_RESULTS_REPO}} {{PROCESSED_DIR}} processed/ \
+      --commit-message "Update interim results (git: {{GIT_SHA}})"
+    {{HF}} upload {{HF_REPO}} {{PROCESSED_DIR}} processed/ \
       --repo-type dataset --revision {{HF_BRANCH}} \
       {{HF_EXCLUDE}} \
-      --commit-message "Update processed results"
+      --commit-message "Update processed results (git: {{GIT_SHA}})"
 
 # Upload specific analysis results to your branch
 put-results-for run_path:
-    @echo "Uploading {{run_path}} to branch '{{HF_BRANCH}}'..."
-    hf upload {{HF_RESULTS_REPO}} \
+    #!/usr/bin/env bash
+    if [ "{{HF_BRANCH}}" = "main" ]; then
+        echo "ERROR: Cannot push results directly to main. Use put-results-main or pr-create."
+        exit 1
+    fi
+    echo "Uploading {{run_path}} to branch '{{HF_BRANCH}}'..."
+    {{HF}} upload {{HF_REPO}} \
       {{PROCESSED_DIR}}/{{run_path}} processed/{{run_path}}/ \
       --repo-type dataset --revision {{HF_BRANCH}} \
       {{HF_EXCLUDE}} \
-      --commit-message "Update {{run_path}}"
+      --commit-message "Update {{run_path}} (git: {{GIT_SHA}})"
 
 # Upload results directly to main (maintainers only)
 put-results-main:
     @echo "Uploading results directly to main..."
-    hf upload {{HF_RESULTS_REPO}} {{INTERIM_DIR}} interim/ \
+    {{HF}} upload {{HF_REPO}} {{INTERIM_DIR}} interim/ \
       --repo-type dataset {{HF_EXCLUDE}} \
-      --commit-message "Update interim results"
-    hf upload {{HF_RESULTS_REPO}} {{PROCESSED_DIR}} processed/ \
+      --commit-message "Update interim results (git: {{GIT_SHA}})"
+    {{HF}} upload {{HF_REPO}} {{PROCESSED_DIR}} processed/ \
       --repo-type dataset {{HF_EXCLUDE}} \
-      --commit-message "Update processed results"
+      --commit-message "Update processed results (git: {{GIT_SHA}})"
 
 # Upload results to main as a pull request for review
 pr-create message="Merge results":
-    @echo "Creating PR with results from branch '{{HF_BRANCH}}'..."
-    hf upload {{HF_RESULTS_REPO}} {{INTERIM_DIR}} interim/ \
+    @echo "Creating PR from branch '{{HF_BRANCH}}'..."
+    {{HF}} upload {{HF_REPO}} ./{{DATA_DIR}} . \
       --repo-type dataset --create-pr \
+      --include "interim/**" --include "processed/**" \
       {{HF_EXCLUDE}} \
-      --commit-message "{{message}}: interim"
-    hf upload {{HF_RESULTS_REPO}} {{PROCESSED_DIR}} processed/ \
-      --repo-type dataset --create-pr \
-      {{HF_EXCLUDE}} \
-      --commit-message "{{message}}: processed"
-    @echo "PR(s) created. Review and merge at:"
-    @echo "  https://huggingface.co/datasets/{{HF_RESULTS_REPO}}/discussions"
+      --commit-message "{{message}} (git: {{GIT_SHA}})"
+    @echo "PR created. Review and merge at:"
+    @echo "  https://huggingface.co/datasets/{{HF_REPO}}/discussions"
 
 # ==================== DATA ADMIN (Maintainers Only) ====================
 
 # Upload new input data to main
 put-inputs:
-    @echo "Uploading inputs to {{HF_INPUTS_REPO}}..."
-    hf upload {{HF_INPUTS_REPO}} {{EXTERNAL_DIR}} external/ \
+    @echo "Uploading inputs to {{HF_REPO}}..."
+    {{HF}} upload {{HF_REPO}} {{EXTERNAL_DIR}} external/ \
       --repo-type dataset {{HF_EXCLUDE}} \
-      --commit-message "Update external data"
-    hf upload {{HF_INPUTS_REPO}} {{RAW_DIR}} raw/ \
+      --commit-message "Update external data (git: {{GIT_SHA}})"
+    {{HF}} upload {{HF_REPO}} {{RAW_DIR}} raw/ \
       --repo-type dataset {{HF_EXCLUDE}} \
-      --commit-message "Update raw data"
+      --commit-message "Update raw data (git: {{GIT_SHA}})"
 
 # Download from original sources then upload to HF
 # NOTE: Assumes project has a downloading module — adjust import path per project
@@ -320,12 +337,12 @@ get-from-sources:
 
 # ==================== HISTORY & INSPECTION ====================
 
-# Show commit log for results repo
+# Show commit log for your branch
 log:
     #!/usr/bin/env bash
-    python3 -c "
+    pixi run python3 -c "
     from huggingface_hub import list_repo_commits
-    commits = list_repo_commits('{{HF_RESULTS_REPO}}', repo_type='dataset', revision='{{HF_BRANCH}}')
+    commits = list_repo_commits('{{HF_REPO}}', repo_type='dataset', revision='{{HF_BRANCH}}')
     for c in commits[:20]:
         print(f'{c.commit_id[:8]}  {c.created_at:%Y-%m-%d %H:%M}  {c.title}')
     "
@@ -333,9 +350,9 @@ log:
 # Show commit log for main
 log-main:
     #!/usr/bin/env bash
-    python3 -c "
+    pixi run python3 -c "
     from huggingface_hub import list_repo_commits
-    commits = list_repo_commits('{{HF_RESULTS_REPO}}', repo_type='dataset')
+    commits = list_repo_commits('{{HF_REPO}}', repo_type='dataset')
     for c in commits[:20]:
         print(f'{c.commit_id[:8]}  {c.created_at:%Y-%m-%d %H:%M}  {c.title}')
     "
@@ -343,15 +360,15 @@ log-main:
 # Download a specific historical version
 get-results-at revision:
     @echo "Downloading results at revision {{revision}}..."
-    hf download {{HF_RESULTS_REPO}} --repo-type dataset \
+    {{HF}} download {{HF_REPO}} --repo-type dataset \
       --revision {{revision}} \
-      --include "interim/*" --include "processed/*" \
+      --include "interim/**" --include "processed/**" \
       --local-dir {{DATA_DIR}}
 
 # Tag current state of a branch for reproducibility (e.g., just tag paper-v1)
 tag name:
     @echo "Tagging '{{HF_BRANCH}}' as '{{name}}'..."
-    hf repo tag create {{HF_RESULTS_REPO}} {{name}} --repo-type dataset --revision {{HF_BRANCH}}
+    {{HF}} repo tag create {{HF_REPO}} {{name}} --repo-type dataset --revision {{HF_BRANCH}}
     @echo "Retrieve with: just get-results-at {{name}}"
 
 # ==================== CODE QUALITY ====================
@@ -372,23 +389,23 @@ config:
     @echo "Current Configuration:"
     @echo "  HF_ORG: {{HF_ORG}}"
     @echo "  HF_PROJECT: {{HF_PROJECT}}"
-    @echo "  HF_INPUTS_REPO: {{HF_INPUTS_REPO}}"
-    @echo "  HF_RESULTS_REPO: {{HF_RESULTS_REPO}}"
+    @echo "  HF_REPO: {{HF_REPO}}"
     @echo "  HF_BRANCH: {{HF_BRANCH}}"
+    @echo "  GIT_SHA: {{GIT_SHA}}"
     @echo "  CORES: {{CORES}}"
 
-# List files in the results repo
+# List files in the repo
 list-data:
     #!/usr/bin/env bash
-    python3 -c "
+    pixi run python3 -c "
     from huggingface_hub import list_repo_tree
-    for item in list_repo_tree('{{HF_RESULTS_REPO}}', repo_type='dataset', revision='{{HF_BRANCH}}'):
+    for item in list_repo_tree('{{HF_REPO}}', repo_type='dataset', revision='{{HF_BRANCH}}'):
         print(f'  {item.path}')
     "
 
 # Purge local HF download cache
 cache-clear:
-    hf cache prune
+    {{HF}} cache prune
 ```
 
 ---
@@ -404,48 +421,65 @@ pixi install
 pre-commit install --hook-type pre-commit --hook-type pre-push
 
 # Login to Hugging Face (one-time)
-hf auth login
+pixi run hf auth login
 
-# Create your working branch
-just branch-create
-
-# Get data
+# Get data (from main)
 just get-inputs
 just get-results
+```
+
+**Note**: `hf download` adds and updates files but does not delete local files
+that were removed from the remote. If you need a clean state (e.g., after a
+teammate deleted stale results on main), delete the local directory first:
+
+```bash
+rm -rf data/processed && just get-results
 ```
 
 ### Start your day
 
 ```bash
 git pull                  # Code updates
-just get-inputs           # Shared input data (if changed)
-just get-results          # Latest merged results from main
+just get-results          # Latest merged results from HF main
 just dry                  # Check pipeline status
 ```
 
-### Work and share
+### Start a feature
+
+```bash
+# Create matching branches on GitHub and HF Hub
+git checkout -b feat/batch-correction
+just branch-create
+
+# Now put-results will target feat/batch-correction on HF Hub
+just config               # Verify HF_BRANCH shows your branch name
+```
+
+### Work and push
 
 ```bash
 # Run your analysis...
 
-# Push results to YOUR branch (no risk of clobbering anyone)
+# Push results to your HF branch (refuses if on main)
 just put-results-for my-analysis
 
-# Commit code
+# Commit and push code
 git add notebooks/3.01-srs-batch-correction.py
 git commit -m "feat: batch correction analysis"
-git push
+git push -u origin feat/batch-correction
 ```
 
 ### Share with the team
 
 ```bash
-# Option A: Upload results as a PR for review (merge via HF web UI)
-just pr-create "Add batch correction results"
-
-# Option B: Let a teammate preview your branch directly
+# Let a teammate preview your data branch directly
 # (teammate runs:)
-just get-results-from srs
+just get-results-from feat/batch-correction
+
+# When ready to merge: create PRs on both repos
+# GitHub: open PR as usual (web UI or gh pr create)
+# HF Hub: upload results as a data PR
+just pr-create "Add batch correction results"
 ```
 
 ### When things go wrong
@@ -530,7 +564,7 @@ import pandas as pd
 from huggingface_hub import hf_hub_download
 
 path = hf_hub_download(
-    repo_id="carpenter-singh-lab/myproject-results",
+    repo_id="carpenter-singh-lab/myproject",
     filename="interim/profiles.parquet",
     repo_type="dataset",
 )
