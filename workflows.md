@@ -4,10 +4,7 @@
 > This workflow is being actively tested in our lab. Expect rough edges and please share feedback!
 
 > [!NOTE]
-> We use Justfile + Snakemake + rclone + s5cmd for data management. The Justfile provides a clean get/put interface for S3 operations (rclone for sync, s5cmd for listing). Snakemake handles pipeline execution. Downloads from external sources use SHA256 hash verification via Pooch; S3 sync relies on rclone's checksum-based change detection.
-
-> [!NOTE]
-> Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides.
+> Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides. See [Design Decisions](#design-decisions) for why we chose this toolchain.
 
 ## How We Organize Projects
 
@@ -454,17 +451,9 @@ This section covers the standard workflow for team members working on existing p
 
 ### Understanding Roles
 
-**Analysts/Scientists (most team members):**
+**Everyone** runs `just get-inputs`, `just run`, `just dry`, and `just put-results-for`. Never manually edit files in `raw/`, `external/`, or `interim/` (pipeline runs can regenerate `interim/`).
 
-- Work in `data/processed/` - your personal workspace
-- Read from `data/interim/` - pipeline outputs
-- Never manually edit files in `raw/`, `external/`, or `interim/` (pipeline runs can regenerate `interim/`)
-
-**Data Maintainers (1-2 designated people):**
-
-- Run pipelines when upstream data changes
-- Update processing scripts
-- Coordinate team-wide data updates
+**Data maintainers (1-2 designated people)** additionally handle upstream data changes: `just get-from-sources`, `just put-inputs`, and new Snakemake rules. These require team coordination (see [Adding New Data Sources](#adding-new-data-sources-maintainers-only)).
 
 ### First Day
 
@@ -558,7 +547,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 2. **Analysts work in processed/**: All personal analysis outputs go here
 3. **Data flows one way**: raw/external → interim → processed
 4. **Never manually edit upstream directories**: `raw/`, `external/`, and `interim/` are pipeline-managed
-5. **Maintainers coordinate updates**: Pipeline changes require coordination
+5. **Upstream data changes require coordination**: Maintainers announce in Slack before updating source data or pipeline rules
 
 ### Adding New Data Sources (Maintainers Only)
 
@@ -636,32 +625,7 @@ just run               # Run pipeline
 just put-results       # Share results to team S3
 ```
 
-The team S3 bucket becomes the single source of truth, eliminating metadata warnings and simplifying data management.
-
-### Pipeline Management (Maintainers Only)
-
-```bash
-# Check what would run (dry run)
-just dry
-# or: pixi run snakemake --dry-run --cores 4 --scheduler greedy
-
-# Get latest input data from team S3
-just get-inputs
-
-# Run full pipeline
-just run
-# or: pixi run snakemake --cores 4 --printshellcmds --scheduler greedy
-
-# Push all results to team S3
-just put-results
-
-# Commit changes
-git add .
-git commit -m "fix: update pipeline with new data"
-git push
-```
-
-**Coordination Protocol:**
+**Coordination Protocol** (when updating upstream data or pipeline rules):
 
 1. Announce in Slack before pipeline updates
 2. Ensure no active analyses in progress
@@ -782,3 +746,14 @@ list-s3:
 
 - <https://github.com/broadinstitute/jump_production>
 - <https://github.com/broadinstitute/2025_04_13_OASIS_CellPainting>
+
+### Design Decisions
+
+| Tool | Role | Why |
+| --- | --- | --- |
+| **Justfile** | Command interface | Simple `get`/`put`/`run` verbs; loads `.env`; no build-system baggage (vs Make) |
+| **Snakemake** | Pipeline execution | File-based DAG with `--dry-run`; incremental reruns; scales to cluster/cloud |
+| **rclone** | S3 sync | Checksum-based change detection avoids re-downloading unchanged files; `sync` and `copy` modes match download vs upload semantics |
+| **s5cmd** | S3 browsing | Fast parallel listing; simpler output than `aws s3 ls` |
+| **Pooch** | External downloads | SHA256 hash verification for non-S3 sources; caches by default |
+| **pixi** | Environment management | Conda + pip in one lockfile; required for GPU libraries (RAPIDS, CuPy, CUDA) and non-Python deps |
