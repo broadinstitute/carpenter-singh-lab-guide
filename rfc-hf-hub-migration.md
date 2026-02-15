@@ -2,10 +2,95 @@
 
 | Field | Value |
 | --- | --- |
-| **Status** | Draft |
+| **Status** | Withdrawn |
 | **Author** | Shantanu Singh |
 | **Created** | 2026-02-15 |
 | **Last updated** | 2026-02-15 |
+
+## Why This RFC Was Withdrawn
+
+After prototyping against `jump_production` and reviewing the design against
+the current `workflows.md`, we concluded that the complexity is not justified
+by the problems it solves — at least not yet. The core issue: **not everything
+needs versioning, and S3's simplicity is partly the point.**
+
+The current workflow stores final results on S3 and relies on pipeline
+reproducibility (Snakemake + pinned environments) to regenerate anything
+upstream. That's a deliberate trade-off — less safety, much less ceremony.
+HF Hub would version everything (raw, interim, processed), but the lab hasn't
+established that it *needs* all of that versioned. Introducing full data
+versioning before answering "what actually needs to be versioned?" adds
+complexity without a clear payoff.
+
+### Specific findings
+
+**High severity**:
+
+1. **Exact-sync regression.** `hf download` is additive (adds/updates files,
+   never deletes). The current workflow uses `rclone sync`, which converges
+   local state to match the remote exactly. The RFC's `get-results-clean`
+   recipe papers over this with `rm -rf` + re-download, but only for results —
+   no equivalent exists for inputs. This is a step backward in reliability.
+
+2. **Input download scope expansion.** The current daily workflow intentionally
+   pulls only `external/` and `profiles/` — a narrow, fast sync. The RFC's
+   `get-inputs` pulls all of `raw/**`, which for large projects (Cell Painting
+   images) is a major bandwidth and disk regression.
+
+**Medium severity**:
+
+1. **Daily workflow drops `get-inputs`.** The RFC's start-of-day omits input
+   sync (`git pull` → `get-results` → `dry`), while the current workflow
+   includes it. Analysts can silently drift from upstream inputs.
+
+2. **`pr-create` is misleading.** The recipe says "Creating PR from branch" but
+   uploads local `./data` with `--create-pr` and no `--revision`. It doesn't
+   actually represent the HF branch state — it uploads whatever is on disk.
+   This disconnect between the branching model narrative and the actual command
+   will confuse reviewers.
+
+3. **Branch lifecycle is manual and fragile.** Every `git checkout -b` requires
+   a matching `just branch-create`. Forgetting this is a known failure mode
+   (acknowledged in the Trade-offs section). The current workflow has no
+   equivalent extra step. A `post-checkout` hook could automate this, but adds
+   yet another hook to maintain.
+
+4. **Role guardrails are weaker.** The current workflow constrains analysts to
+   `processed/` and explicitly says "never edit upstream directories." The RFC's
+   default `put-results` uploads both `interim/` and `processed/` without
+   restating those boundaries.
+
+### Fundamental tension
+
+The RFC tries to version everything because HF Hub makes versioning easy. But
+the lab's actual need is narrower: version *final results* and make them
+browsable, while keeping inputs reproducible via pipeline re-execution. S3 with
+`rclone sync` already handles the "dumb pipe" role well. The missing pieces
+(audit trail, conflict prevention, browsability) might be better addressed
+individually rather than by replacing the entire data layer.
+
+### What would need to be true to revisit
+
+- A clear answer to "what data layers need versioning?" (probably just
+  `processed/`, not `raw/` or `interim/`)
+- HF Hub or an alternative that supports exact-sync semantics (delete tracking)
+- A branching model that doesn't require manual synchronization between GitHub
+  and the data remote
+- Cost justification beyond "it's only $200/month" — what incidents would this
+  have prevented?
+
+### What was learned
+
+- DVC is not the answer either (daily-use friction, no browsing, file-level
+  dedup only, pipeline overlap with Snakemake — see FAQ below)
+- HF Hub's chunk-level dedup (Xet) is genuinely valuable for large parquet
+  files with incremental changes
+- The Justfile pattern for wrapping data operations works well regardless of
+  backend
+- Web-browsable data (parquet viewer, image preview) is a real quality-of-life
+  improvement that S3 does not offer
+
+---
 
 ## Summary
 
@@ -661,8 +746,10 @@ the team is comfortable.
 
 ---
 
-## Open Questions
+## Open Questions (at time of withdrawal)
 
-- Which project should pilot first?
-- Do we need an academic storage grant, or is 10 TB sufficient for the pilot?
-- Should we request Enterprise plan evaluation for SSO/resource groups?
+- What data layers actually need versioning? (`processed/` only? `interim/` too?)
+- Is there a lighter-weight solution that adds browsability and audit trail to
+  S3 without replacing the sync layer?
+- Could HF Hub be used selectively — e.g., publish final datasets for external
+  sharing — without replacing the internal workflow?
