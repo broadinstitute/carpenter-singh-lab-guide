@@ -154,7 +154,7 @@ RAW_DIR := DATA_DIR + "/raw"
 INTERIM_DIR := DATA_DIR + "/interim"
 PROCESSED_DIR := DATA_DIR + "/processed"
 # Recycle location for files replaced/deleted during sync-based downloads
-RCLONE_BACKUP_DIR := PROCESSED_DIR + "/_recycle"
+RCLONE_BACKUP_DIR := DATA_DIR + "/_recycle"
 
 # Default recipe (shows help)
 default:
@@ -721,11 +721,15 @@ put-results:
 
 # Download all results from team S3
 get-results:
-    @echo "Getting results from team S3..."
-    @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
-    @stamp=$$(date +%Y%m%d-%H%M%S); \
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/interim" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/; \
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/processed" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Getting results from team S3..."
+    mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
+    stamp=$(date +%Y%m%d-%H%M%S)
+    echo "Syncing interim/..."
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$stamp/interim" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/
+    echo "Syncing processed/..."
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$stamp/processed" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
 
 # Upload specific analysis results to team S3
 put-results-for run_path:
@@ -734,10 +738,12 @@ put-results-for run_path:
 
 # Download specific analysis results from team S3
 get-results-for run_path:
-    @echo "Getting results for: {{run_path}}"
-    @mkdir -p {{PROCESSED_DIR}}/{{run_path}}
-    @stamp=$$(date +%Y%m%d-%H%M%S); \
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/{{run_path}}" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/" {{PROCESSED_DIR}}/{{run_path}}/
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Getting results for: {{run_path}}"
+    mkdir -p {{PROCESSED_DIR}}/{{run_path}}
+    stamp=$(date +%Y%m%d-%H%M%S)
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$stamp/{{run_path}}" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/" {{PROCESSED_DIR}}/{{run_path}}/
 
 # ==================== CODE QUALITY ====================
 
@@ -770,7 +776,7 @@ list-s3:
 <!-- scaffold:justfile-recipes:end -->
 
 > [!WARNING]
-> **`rclone sync` vs `rclone copy`**: `get-inputs` and `get-results` use `rclone sync` which makes local match S3 exactly. In the recipes above, `get-results` and `get-results-for` use `--backup-dir` with `RCLONE_BACKUP_DIR` so replaced/deleted local files are moved into `data/processed/_recycle/<timestamp>/` instead of being permanently removed. `put-results` uses `rclone copy` which only adds/updates files on S3 without deleting — safe for shared buckets where multiple team members upload results.
+> **`rclone sync` vs `rclone copy`**: `get-inputs` and `get-results` use `rclone sync` which makes local match S3 exactly. In the recipes above, `get-results` and `get-results-for` use `--backup-dir` with `RCLONE_BACKUP_DIR` so replaced/deleted local files are moved into `data/_recycle/<timestamp>/` instead of being permanently removed. `put-results` uses `rclone copy` which only adds/updates files on S3 without deleting — safe for shared buckets where multiple team members upload results.
 
 ### Example Projects
 
