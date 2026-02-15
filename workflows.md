@@ -4,7 +4,7 @@
 > This workflow is being actively tested in our lab. Expect rough edges and please share feedback!
 
 > [!NOTE]
-> We use Justfile + Snakemake + s5cmd for data management. The Justfile provides a clean get/put interface for S3 operations, while Snakemake handles pipeline execution. All data downloads include SHA256 hash verification for integrity.
+> We use Justfile + Snakemake + rclone + s5cmd for data management. The Justfile provides a clean get/put interface for S3 operations (rclone for sync, s5cmd for listing). Snakemake handles pipeline execution. Downloads from external sources use SHA256 hash verification via Pooch; S3 sync relies on rclone's checksum-based change detection.
 
 > [!NOTE]
 > Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides.
@@ -19,7 +19,7 @@ We follow [Cookiecutter Data Science](https://cookiecutter-data-science.drivenda
 2. **Raw data is immutable**: Never edit raw data directly
 3. **Clear separation of concerns**: Pipeline-managed data vs. personal analysis
 4. **Everything is reproducible**: Code + raw data = any output
-5. **Data integrity**: All downloaded files verified with SHA256 hashes
+5. **Data integrity**: External downloads verified with SHA256 hashes; S3 sync uses checksum-based change detection
 
 ### Directory Structure
 
@@ -30,10 +30,14 @@ project-name/
 │   ├── external/     # Third-party reference data
 │   ├── interim/      # Pipeline-generated intermediate data
 │   └── processed/    # Your analysis outputs (your workspace)
-├── <PROJECT_NAME>/   # Python package with processing code
-├── notebooks/        # Numbered analysis notebooks
-├── scripts/          # Shell scripts for data import
-└── docs/            # Documentation
+├── src/
+│   └── <PROJECT_NAME>/  # Python package (src layout)
+├── rules/            # Modular Snakemake rule files (.smk)
+├── configs/          # Pipeline and tool configuration (YAML)
+├── notebooks/        # Numbered analysis notebooks (.py)
+├── scripts/          # Shell scripts, SQL, and pipeline orchestration (not Python analysis)
+├── references/       # Reference documents and data dictionaries
+└── docs/             # Documentation
 ```
 
 ### Experiment Tracking
@@ -81,9 +85,10 @@ This section covers creating a new project from scratch. Most team members will 
 
 - Git
 - Python 3.12+
-- [uv](https://github.com/astral-sh/uv) package manager
-- [just](https://github.com/casey/just) command runner (install with `uv add rust-just`)
-- [s5cmd](https://github.com/peak/s5cmd) for S3 operations (with parallel workers)
+- [pixi](https://pixi.sh/) package manager (handles conda + pip dependencies, GPU/RAPIDS support, feature environments)
+- [just](https://github.com/casey/just) command runner
+- [rclone](https://rclone.org/) for S3 sync operations (properly tracks changes, avoids re-downloads)
+- [s5cmd](https://github.com/peak/s5cmd) for S3 listing/browsing (fast, simple output)
 - [Snakemake](https://snakemake.github.io/) for pipeline execution
 - AWS CLI configured with appropriate credentials
 
@@ -108,63 +113,136 @@ git init
 
 #### 2. Configure Storage
 
-```bash
-# Copy the Justfile template from:
-# https://github.com/broadinstitute/jump_production/blob/main/Justfile
-# This provides standard commands using get/put convention
+Copy the Justfile template from [jump_production](https://github.com/broadinstitute/jump_production/blob/main/Justfile) and edit the project-specific values:
 
-# Edit the Justfile to set your S3 configuration:
-# S3_BUCKET := "your-bucket"
-# S3_PROJECT_PATH := "projects/your-project/datastore"
+```just
+set dotenv-load := true
 
-# Configure S5CMD for performance (16 parallel workers by default):
-# S5CMD_FLAGS := "--numworkers 16"
-# Standard excludes applied: .DS_Store, __pycache__, *.pyc
+# ==================== PROJECT CONFIGURATION ====================
+S3_BUCKET := "your-bucket"
+S3_PROJECT_PATH := "projects/your-project/datastore"
+S3_PREFIX := "s3://" + S3_BUCKET + "/" + S3_PROJECT_PATH
 
-# Ensure AWS profile is configured
-# Example: export AWS_PROFILE=broad-imaging
+CORES := env_var_or_default("CORES", "all")
+AWS_PROFILE := env_var_or_default("AWS_PROFILE", "default")
+
+# Rclone common flags
+RCLONE_FLAGS := env_var_or_default("RCLONE_FLAGS", "--transfers 16 --checkers 16")
+RCLONE_COMMON := RCLONE_FLAGS + " -v --stats-one-line --s3-provider=AWS --s3-env-auth --s3-region=us-east-1 --exclude '.DS_Store' --exclude '__pycache__/**' --exclude '*.pyc'"
+
+# rclone sync: makes destination match source exactly (DELETES extra files at destination)
+# Use for downloads — S3 is source of truth, local should match exactly
+RCLONE_SYNC := "rclone sync " + RCLONE_COMMON
+
+# rclone copy: adds/updates files without deleting anything at destination
+# Use for uploads — safe for shared S3 buckets
+RCLONE_COPY := "rclone copy " + RCLONE_COMMON
+
+# S5CMD for listing only (faster than rclone for browsing)
+S5CMD_FLAGS := env_var_or_default("S5CMD_FLAGS", "--numworkers 16")
+S5CMD := "s5cmd " + S5CMD_FLAGS
+
+SNAKEMAKE := "pixi run snakemake"
+
+# Directory names (following Cookiecutter Data Science structure)
+DATA_DIR := "data"
+EXTERNAL_DIR := DATA_DIR + "/external"
+RAW_DIR := DATA_DIR + "/raw"
+INTERIM_DIR := DATA_DIR + "/interim"
+PROCESSED_DIR := DATA_DIR + "/processed"
+
+# Default recipe (shows help)
+default:
+    @just --list
 ```
+
+Ensure AWS profile is configured: `export AWS_PROFILE=broad-imaging`
 
 #### 3. Create Directory Structure
 
 ```bash
 # Create all directories
 mkdir -p data/{raw,external,interim,processed}
-mkdir -p <PROJECT_NAME>
+mkdir -p src/<PROJECT_NAME>
+mkdir -p rules configs
 mkdir -p notebooks scripts tests
 mkdir -p docs references
 
 # Add .gitkeep files to track empty directories
 touch data/{raw,external,interim,processed}/.gitkeep
+touch configs/.gitkeep scripts/.gitkeep tests/.gitkeep docs/.gitkeep
 touch notebooks/.gitkeep references/.gitkeep
+touch src/<PROJECT_NAME>/__init__.py
 touch README.md
 ```
 
 #### 4. Set Up Python Environment
 
 ```bash
-# Initialize Python project
-uv init --name <PROJECT_NAME> --package
+# Initialize pixi project
+pixi init --format pyproject
 
-# Add core dependencies
-uv add loguru typer python-dotenv pooch
-uv add snakemake  # for pipeline execution
+# Add Python and conda-only dependencies
+pixi add python=3.12
 
-# Add typical analysis dependencies
-uv add pandas
-
-# Add development dependencies
-uv add --group lint ruff pre-commit
-uv add --group test pytest
+# Add Python (pip) dependencies in [project] dependencies in pyproject.toml
+# (not [tool.pixi.dependencies] — that's for conda-only packages)
 ```
 
-Download Python gitignore template
+Add to `pyproject.toml`:
+
+```toml
+[project]
+name = "<PROJECT_NAME>"
+version = "0.1.0"
+requires-python = ">= 3.12"
+dependencies = [
+    "pandas",
+    "loguru",
+    "typer",
+    "python-dotenv",
+    "pooch",
+    "snakemake",
+    "pre-commit",
+    "rust-just",
+]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.pypi-dependencies]
+<PROJECT_NAME> = { path = ".", editable = true }
+
+[dependency-groups]
+lint = ["ruff"]
+test = ["pytest"]
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+lint = { features = ["lint"], solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+```
+
+> **Why pixi over uv?** pixi handles conda + pip dependencies in one tool. GPU libraries (RAPIDS, CuPy, CUDA), R, and other system-level dependencies require conda channels. Add specialized feature environments as needed (e.g., `rapids`, `cheminformatics`, `marimo`), each with `no-default-feature = true` to isolate conflicting dependencies.
+
+Download Python gitignore template:
 
 ```bash
 curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 ```
 
-> **Note**: Add `data/` to `.gitignore` to prevent accidentally committing large data files.
+Append to `.gitignore` to prevent committing data files and Snakemake metadata while preserving the directory structure tracked via `.gitkeep`:
+
+```text
+# Data directory contents (structure tracked via .gitkeep)
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Snakemake metadata
+.snakemake/
+```
 
 #### 5. Configure Code Quality Tools
 
@@ -172,19 +250,19 @@ curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Pytho
 
 Add to your `pyproject.toml`:
 
-Note: Replace `<PROJECT_NAME>` with the actual project name
-
 ```toml
 [tool.ruff]
 line-length = 120
-src = ["<PROJECT_NAME>"]
+src = ["src"]
 target-version = "py312"
-include = ["pyproject.toml", "<PROJECT_NAME>/**/*.py"]
+include = ["pyproject.toml", "src/**/*.py", "notebooks/**/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "W"]
 ignore = [
     "E501",   # Line too long (handled by formatter)
+    "N803",   # Argument name should be lowercase (ML convention: X, Y for matrices)
+    "N806",   # Variable in function should be lowercase (ML convention: X_train, X_test)
 ]
 
 [tool.ruff.format]
@@ -215,16 +293,18 @@ Create `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: check-added-large-files
         args: [--maxkb=10240]
       - id: check-yaml
       - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.1
+    rev: v0.15.1
     hooks:
       - id: ruff
         args: [--fix]
@@ -238,31 +318,84 @@ Install hooks:
 pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
-#### 7. Create config file for project library
+#### 7. Create config and GPU modules
 
-Create `<PROJECT_NAME>/config.py` to set up data paths, and do other setup needed for code you may write in the project library.
+Create `src/<PROJECT_NAME>/config.py`:
 
 ```py
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from loguru import logger
 
-# Load environment variables from .env file if it exists
 load_dotenv()
 
-# Paths
-PROJ_ROOT = Path(__file__).resolve().parents[2]
+# Support override via environment variable for development
+# <PROJECT_NAME_UPPER> = uppercased project name, e.g., JUMP_PRODUCTION_ROOT, OASIS_CELLPAINTING_ROOT
+if os.environ.get("<PROJECT_NAME_UPPER>_ROOT"):
+    PROJ_ROOT = Path(os.environ["<PROJECT_NAME_UPPER>_ROOT"]).resolve()
+else:
+    # src/<PROJECT_NAME>/config.py → parents: [0]=pkg, [1]=src, [2]=project root
+    PROJ_ROOT = Path(__file__).resolve().parents[2]
+logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
 
 DATA_DIR = PROJ_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 INTERIM_DATA_DIR = DATA_DIR / "interim"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
+
+# CPU count — respects Slurm/cgroups on Linux, falls back to os.cpu_count() on macOS
+try:
+    CPUS: int = len(os.sched_getaffinity(0))
+except AttributeError:
+    CPUS: int = os.cpu_count() or 1
 ```
+
+Create `src/<PROJECT_NAME>/gpu.py` (for projects with GPU workloads):
+
+```py
+from __future__ import annotations
+
+from functools import lru_cache
+
+from loguru import logger
+
+
+@lru_cache(maxsize=1)
+def has_gpu() -> bool:
+    """Check whether a CUDA GPU is available via CuPy."""
+    try:
+        import cupy
+
+        cupy.cuda.runtime.getDeviceCount()
+        return True
+    except ImportError:
+        return False
+    except Exception as e:
+        logger.warning(f"CuPy installed but GPU unavailable ({type(e).__name__}: {e}), falling back to CPU")
+        return False
+```
+
+Usage: `from <PROJECT_NAME>.gpu import has_gpu; HAS_GPU = has_gpu()` — no `--no-gpu` CLI flags. Limit GPUs with `CUDA_VISIBLE_DEVICES=0`.
 
 #### 8. Create Test Pipeline
 
-Create `Snakefile` to verify setup:
+Create `Snakefile` with modular rule includes:
+
+```python
+# configfile: "configs/pipeline.yaml"  # uncomment when you add pipeline config
+
+# Include modular rule files
+include: "rules/processing.smk"
+
+rule all:
+    input:
+        "data/interim/test.txt",
+```
+
+Create `rules/processing.smk`:
 
 ```python
 rule prepare_data:
@@ -272,12 +405,14 @@ rule prepare_data:
         "echo 'test' > {output}"
 ```
 
+As the pipeline grows, split rules into separate `.smk` files by function (e.g., `rules/analysis.smk`, `rules/visualization.smk`).
+
 Test it:
 
 ```bash
-snakemake --cores 1
+pixi run snakemake --cores 1 --scheduler greedy
 git add .
-git commit -m "Initial project structure with pipeline"
+git commit -m "feat: initial project structure with pipeline"
 # pre-commit hooks might update files upon commit, so you may need to git add again
 ```
 
@@ -307,7 +442,7 @@ Once the repo is setup here's what someone else - or you starting over - would n
 # Clone and install
 git clone https://github.com/yourusername/<PROJECT_NAME>.git
 cd <PROJECT_NAME>
-uv sync --all-groups
+pixi install
 
 # Configure AWS profile if needed
 export AWS_PROFILE=your-profile
@@ -359,9 +494,19 @@ just put-results-for your-analysis
 
 # Commit code changes
 git add notebooks/your-notebook.py
-git commit -m "Add analysis of X showing Y"
+git commit -m "feat: add analysis of X showing Y"
 git push
 ```
+
+### Commits
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) format:
+
+- `feat:` — new analysis or feature
+- `fix:` — bug fix
+- `docs:` — documentation only
+- `refactor:` — code restructuring without behavior change
+- `chore:` — maintenance (dependency updates, CI config)
 
 ### Pull Requests
 
@@ -383,13 +528,13 @@ git push
 
 **Decision Tree:**
 
-- **External URLs/APIs** → Create downloaders in `<PROJECT_NAME>/downloading/`
-- **S3 data** → Use s5cmd directly
+- **External URLs/APIs** → Create downloaders in `src/<PROJECT_NAME>/downloading/`
+- **S3 data** → Use s5cmd for listing, rclone for download
 - **All sources** → Integrate with Snakemake rules if part of pipeline
 
 #### Unified Data Download Pattern
 
-Create `<PROJECT_NAME>/downloading/download_data.py` to fetch both external reference data and profile files using Pooch with SHA256 verification:
+Create `src/<PROJECT_NAME>/downloading/download_data.py` to fetch both external reference data and profile files using Pooch with SHA256 verification:
 
 ```python
 import pooch
@@ -442,7 +587,7 @@ Run downloads:
 
 ```bash
 # Download all data from original sources (admin task)
-uv run python -m <PROJECT_NAME>.downloading.download_data
+pixi run python -m <PROJECT_NAME>.downloading.download_data
 
 # Or use the Justfile
 just get-from-sources  # Downloads from original sources
@@ -474,22 +619,30 @@ The team S3 bucket becomes the single source of truth, eliminating metadata warn
 ```bash
 # Check what would run (dry run)
 just dry
-# or: snakemake --dry-run --cores 4
+# or: pixi run snakemake --dry-run --cores 4 --scheduler greedy
 
 # Get latest input data from team S3
 just get-inputs
 
 # Run full pipeline
 just run
-# or: snakemake --cores 4 --printshellcmds
+# or: pixi run snakemake --cores 4 --printshellcmds --scheduler greedy
 
 # Push all results to team S3
 just put-results
 
 # Commit changes
 git add .
-git commit -m "Update pipeline with new data"
+git commit -m "fix: update pipeline with new data"
 git push
+```
+
+**Development shortcut** — when iterating on annotations or config without re-running expensive downstream jobs:
+
+```bash
+# Rebuild database, then touch downstream outputs to prevent re-runs
+pixi run snakemake augment_metadata_db --cores 4
+pixi run snakemake --touch data/processed/expensive-output/.complete
 ```
 
 **Coordination Protocol:**
@@ -501,6 +654,92 @@ git push
 
 ## Appendix
 
+### Justfile Standard Recipes
+
+Beyond the project-specific S3 paths, include these standard recipes:
+
+```just
+# ==================== MAIN WORKFLOW ====================
+
+# Run full pipeline
+run:
+    @echo "Running pipeline with {{CORES}} cores..."
+    @echo "Note: Run 'just get-inputs' first if you haven't downloaded the input data"
+    @{{SNAKEMAKE}} all --cores {{CORES}} --printshellcmds --scheduler greedy
+
+# Preview what will run without executing
+dry:
+    @echo "Performing dry run..."
+    @{{SNAKEMAKE}} --cores {{CORES}} -n -p --scheduler greedy
+
+# ==================== DATA SYNC ====================
+
+# Get input data from team S3 (syncs local to match S3 exactly)
+get-inputs:
+    @echo "Getting input data from team S3..."
+    @mkdir -p {{EXTERNAL_DIR}} {{RAW_DIR}}/profiles
+    @echo "Syncing external/..."
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/external/" {{EXTERNAL_DIR}}/
+    @echo "Syncing profiles/..."
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/profiles/" {{RAW_DIR}}/profiles/
+
+# Upload your results to team S3 (non-destructive — adds/updates only)
+put-results:
+    @echo "Uploading results to team S3..."
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_COPY}} "{{INTERIM_DIR}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/"
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_COPY}} "{{PROCESSED_DIR}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/"
+
+# Download all results from team S3
+get-results:
+    @echo "Getting results from team S3..."
+    @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
+
+# Upload specific analysis results to team S3
+put-results-for run_path:
+    @echo "Uploading results for: {{run_path}}"
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_COPY}} "{{PROCESSED_DIR}}/{{run_path}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/"
+
+# Download specific analysis results from team S3
+get-results-for run_path:
+    @echo "Getting results for: {{run_path}}"
+    @mkdir -p {{PROCESSED_DIR}}/{{run_path}}
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/" {{PROCESSED_DIR}}/{{run_path}}/
+
+# ==================== CODE QUALITY ====================
+
+# Run snakemake linting (filters conda/container warnings since we use pixi)
+snakelint:
+    #!/usr/bin/env bash
+    echo "Running snakemake lint..."
+    output=$({{SNAKEMAKE}} --lint 2>&1)
+    filtered=$(echo "$output" | grep -v -E "(Specify a conda environment|https://snakemake.readthedocs.io|This way, the used software|workflow can be executed on any machine|Also see:$)")
+    echo "$filtered" | grep -v -E "^Lints for rule.*:$" | grep -v "^[[:space:]]*$" || echo "No lint warnings!"
+
+# ==================== UTILITIES ====================
+
+# See pipeline status
+status:
+    @{{SNAKEMAKE}} --summary
+
+# Show current configuration
+config:
+    @echo "Current Configuration:"
+    @echo "  AWS_PROFILE: {{AWS_PROFILE}}"
+    @echo "  S3_BUCKET: {{S3_BUCKET}}"
+    @echo "  S3_PREFIX: {{S3_PREFIX}}"
+    @echo "  CORES: {{CORES}}"
+
+# List what's in S3
+list-s3:
+    @{{S5CMD}} ls {{S3_PREFIX}}/ | head -20
+```
+
+> [!WARNING]
+> **`rclone sync` vs `rclone copy`**: `get-inputs` and `get-results` use `rclone sync` which makes local match S3 exactly — local files not in S3 will be **deleted** (S3 is source of truth). `put-results` uses `rclone copy` which only adds/updates files on S3 without deleting — safe for shared buckets where multiple team members upload results.
+
 ### Example Projects
 
-<https://github.com/broadinstitute/jump_production>
+- <https://github.com/broadinstitute/jump_production>
+- <https://github.com/broadinstitute/2025_04_13_OASIS_CellPainting>

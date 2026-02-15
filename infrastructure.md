@@ -12,7 +12,7 @@
 - **AWS**: For specific project needs (use judiciously)
 - **Broad's compute cluster**: For easily parallelizable jobs
 
-### DGX-1 Server (GPU Computing) FIXME: Now DGX-1 owned by C-lab, move this to deprecated 
+### DGX-1 Server (GPU Computing) FIXME: Now DGX-1 owned by C-lab, move this to deprecated
 
 - Maintenance details: [https://github.com/broadinstitute/ip-chores/issues/25](https://github.com/broadinstitute/ip-chores/issues/25) 🔒
 - Quick start guide: [https://new.ipwiki.app/dgx-1](https://new.ipwiki.app/dgx-1) 🔒
@@ -44,7 +44,8 @@
 ### Package Management
 
 - Install applications using [brew](https://brew.sh/)
-- Use [uv](https://github.com/astral-sh/uv) for Python environment management FIXME: Also describe pixi
+- Use [pixi](https://pixi.sh/) for project environment management (conda + pip dependencies, GPU support) — see [workflows](workflows.md#prerequisites) for details
+- Use [uv](https://github.com/astral-sh/uv) for standalone Python tooling outside of project environments
 
 ## Project Setup & Initialization
 
