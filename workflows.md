@@ -74,8 +74,8 @@ Example progression:
 **Within each notebook**:
 
 - Read inputs from `data/interim/` or `data/external/`
-- Save all outputs to `data/processed/{your-name}/{your-analysis}/`
-- Organize outputs by type: `data/processed/{your-name}/{your-analysis}/figures/`, `/tables/`, etc.
+- Save all outputs to `data/processed/{your-analysis}/`
+- Organize outputs by type: `data/processed/{your-analysis}/figures/`, `/tables/`, etc.
 
 ## Project Setup
 
@@ -430,7 +430,7 @@ This section covers the standard workflow for team members working on existing p
 
 **Analysts/Scientists (most team members):**
 
-- Work in `data/processed/<your-name>/<analysis>/` - your personal workspace
+- Work in `data/processed/` - your personal workspace
 - Read from `data/interim/` - pipeline outputs
 - Never manually edit files in `raw/`, `external/`, or `interim/` (pipeline runs can regenerate `interim/`)
 
@@ -465,7 +465,7 @@ git pull
 
 # 2. If you have local analysis outputs not yet shared, upload first
 # (avoids losing local-only files during sync)
-just put-results-for your-name/your-analysis
+just put-results-for your-analysis
 
 # 3. Get latest data
 just get-inputs    # Get input data (external + profiles) from team S3
@@ -482,7 +482,7 @@ For selective downloads:
 
 ```bash
 # Download specific run
-just get-results-for your-name/specific-analysis
+just get-results-for specific-analysis
 
 # List available data
 just list-s3
@@ -493,14 +493,14 @@ just list-s3
 
 1. **Create notebook**: `notebooks/1.01-abc-analysis-name.py`
 2. **Load data**: Read from `data/interim/`
-3. **Save outputs**: Write to `data/processed/your-name/your-analysis/`
+3. **Save outputs**: Write to `data/processed/your-analysis/`
 4. **Track experiment**: Create GitHub issue with hypothesis, link notebook, paste key figures
 
 ### Sharing Your Work
 
 ```bash
 # Push your analysis to S3
-just put-results-for your-name/your-analysis
+just put-results-for your-analysis
 
 # Commit code changes
 git add notebooks/your-notebook.py
@@ -529,7 +529,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 ### Core Principles
 
 1. **Pipeline manages foundation data**: `snakemake` processes raw/external → interim
-2. **Analysts work in processed/**: Use `data/processed/<your-name>/<analysis>/` for personal analysis outputs
+2. **Analysts work in processed/**: All personal analysis outputs go here
 3. **Data flows one way**: raw/external → interim → processed
 4. **Never manually edit upstream directories**: `raw/`, `external/`, and `interim/` are pipeline-managed
 5. **Maintainers coordinate updates**: Pipeline changes require coordination
