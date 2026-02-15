@@ -717,8 +717,7 @@ get-results:
     @echo "Getting results from team S3..."
     @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
     @stamp=$$(date +%Y%m%d-%H%M%S); \
-    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/interim" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/
-    @stamp=$$(date +%Y%m%d-%H%M%S); \
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/interim" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/; \
     AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} --backup-dir "{{RCLONE_BACKUP_DIR}}/$$stamp/processed" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
 
 # Upload specific analysis results to team S3
