@@ -99,6 +99,7 @@ This section covers creating a new project from scratch. Most team members will 
 
 #### 1. Initialize Project
 
+<!-- scaffold:init-project:start -->
 ```bash
 # Create and enter project directory
 mkdir <PROJECT_NAME>
@@ -110,11 +111,13 @@ cd <PROJECT_NAME>
 # Initialize Git
 git init
 ```
+<!-- scaffold:init-project:end -->
 
 #### 2. Configure Storage
 
 Copy the Justfile template from [jump_production](https://github.com/broadinstitute/jump_production/blob/main/Justfile) and edit the project-specific values:
 
+<!-- scaffold:configure-storage:start -->
 ```just
 set dotenv-load := true
 
@@ -157,6 +160,7 @@ RCLONE_BACKUP_DIR := PROCESSED_DIR + "/_recycle"
 default:
     @just --list
 ```
+<!-- scaffold:configure-storage:end -->
 
 Create a `.env` file for project-specific environment variables (loaded by both the Justfile via `dotenv-load` and Python via `load_dotenv()`):
 
@@ -166,6 +170,7 @@ AWS_PROFILE=broad-imaging
 
 #### 3. Create Directory Structure
 
+<!-- scaffold:create-dirs:start -->
 ```bash
 # Create all directories
 mkdir -p data/{raw,external,interim,processed}
@@ -181,9 +186,11 @@ touch notebooks/.gitkeep references/.gitkeep
 touch src/<PROJECT_NAME>/__init__.py
 touch README.md
 ```
+<!-- scaffold:create-dirs:end -->
 
 #### 4. Set Up Python Environment
 
+<!-- scaffold:pixi-init:start -->
 ```bash
 # Initialize pixi project
 pixi init --format pyproject
@@ -194,9 +201,11 @@ pixi add python=3.12
 # Add Python (pip) dependencies in [project] dependencies in pyproject.toml
 # (not [tool.pixi.dependencies] — that's for conda-only packages)
 ```
+<!-- scaffold:pixi-init:end -->
 
 Add to `pyproject.toml`:
 
+<!-- scaffold:pyproject:start -->
 ```toml
 [project]
 name = "<PROJECT_NAME>"
@@ -229,11 +238,13 @@ default = { solve-group = "default" }
 lint = { features = ["lint"], solve-group = "default" }
 test = { features = ["test"], solve-group = "default" }
 ```
+<!-- scaffold:pyproject:end -->
 
 > **Why pixi over uv?** pixi handles conda + pip dependencies in one tool. GPU libraries (RAPIDS, CuPy, CUDA), R, and other system-level dependencies require conda channels. Add specialized feature environments as needed (e.g., `rapids`, `cheminformatics`, `marimo`), each with `no-default-feature = true` to isolate conflicting dependencies.
 
 Download Python gitignore template:
 
+<!-- scaffold:gitignore:start -->
 ```bash
 curl -o .gitignore https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 ```
@@ -249,6 +260,7 @@ data/**
 # Snakemake metadata
 .snakemake/
 ```
+<!-- scaffold:gitignore:end -->
 
 #### 5. Configure Code Quality Tools
 
@@ -256,6 +268,7 @@ data/**
 
 Add to your `pyproject.toml`:
 
+<!-- scaffold:ruff:start -->
 ```toml
 [tool.ruff]
 line-length = 120
@@ -275,11 +288,13 @@ ignore = [
 quote-style = "double"
 indent-style = "space"
 ```
+<!-- scaffold:ruff:end -->
 
 #### Markdown Linting
 
 Create `.markdownlint.yaml`:
 
+<!-- scaffold:markdownlint:start -->
 ```yaml
 # Markdown style configuration
 MD007:
@@ -291,11 +306,13 @@ MD029:
 MD033: false         # Inline HTML
 MD046: false         # Code block style
 ```
+<!-- scaffold:markdownlint:end -->
 
 #### 6. Configure Pre-commit Hooks
 
 Create `.pre-commit-config.yaml`:
 
+<!-- scaffold:pre-commit:start -->
 ```yaml
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -316,6 +333,7 @@ repos:
         args: [--fix]
       - id: ruff-format
 ```
+<!-- scaffold:pre-commit:end -->
 
 Install hooks:
 
@@ -328,6 +346,7 @@ pixi run pre-commit install --hook-type pre-commit --hook-type pre-push
 
 Create `src/<PROJECT_NAME>/config.py`:
 
+<!-- scaffold:config-py:start -->
 ```py
 import os
 from pathlib import Path
@@ -358,9 +377,11 @@ try:
 except AttributeError:
     CPUS: int = os.cpu_count() or 1
 ```
+<!-- scaffold:config-py:end -->
 
 Create `src/<PROJECT_NAME>/gpu.py` (for projects with GPU workloads):
 
+<!-- scaffold:gpu-py:start -->
 ```py
 from __future__ import annotations
 
@@ -383,6 +404,7 @@ def has_gpu() -> bool:
         logger.warning(f"CuPy installed but GPU unavailable ({type(e).__name__}: {e}), falling back to CPU")
         return False
 ```
+<!-- scaffold:gpu-py:end -->
 
 Usage: `from <PROJECT_NAME>.gpu import has_gpu; HAS_GPU = has_gpu()` — no `--no-gpu` CLI flags. Limit GPUs with `CUDA_VISIBLE_DEVICES=0`.
 
@@ -390,6 +412,7 @@ Usage: `from <PROJECT_NAME>.gpu import has_gpu; HAS_GPU = has_gpu()` — no `--n
 
 Create `Snakefile` with modular rule includes:
 
+<!-- scaffold:snakefile:start -->
 ```python
 # configfile: "configs/pipeline.yaml"  # uncomment when you add pipeline config
 
@@ -400,9 +423,11 @@ rule all:
     input:
         "data/interim/test.txt",
 ```
+<!-- scaffold:snakefile:end -->
 
 Create `rules/processing.smk`:
 
+<!-- scaffold:processing-smk:start -->
 ```python
 rule prepare_data:
     output:
@@ -410,6 +435,7 @@ rule prepare_data:
     shell:
         "echo 'test' > {output}"
 ```
+<!-- scaffold:processing-smk:end -->
 
 As the pipeline grows, split rules into separate `.smk` files by function (e.g., `rules/analysis.smk`, `rules/visualization.smk`).
 
@@ -648,6 +674,7 @@ git push
 
 Beyond the project-specific S3 paths, include these standard recipes:
 
+<!-- scaffold:justfile-recipes:start -->
 ```just
 # ==================== MAIN WORKFLOW ====================
 
@@ -740,6 +767,7 @@ config:
 list-s3:
     @{{S5CMD}} ls {{S3_PREFIX}}/ | head -20
 ```
+<!-- scaffold:justfile-recipes:end -->
 
 > [!WARNING]
 > **`rclone sync` vs `rclone copy`**: `get-inputs` and `get-results` use `rclone sync` which makes local match S3 exactly. In the recipes above, `get-results` and `get-results-for` use `--backup-dir` with `RCLONE_BACKUP_DIR` so replaced/deleted local files are moved into `data/processed/_recycle/<timestamp>/` instead of being permanently removed. `put-results` uses `rclone copy` which only adds/updates files on S3 without deleting — safe for shared buckets where multiple team members upload results.
