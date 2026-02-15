@@ -722,7 +722,7 @@ put-results:
 # Download all results from team S3
 get-results:
     #!/usr/bin/env bash
-    set -euo pipefail
+
     echo "Getting results from team S3..."
     mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
     stamp=$(date +%Y%m%d-%H%M%S)
@@ -739,7 +739,7 @@ put-results-for run_path:
 # Download specific analysis results from team S3
 get-results-for run_path:
     #!/usr/bin/env bash
-    set -euo pipefail
+
     echo "Getting results for: {{run_path}}"
     mkdir -p {{PROCESSED_DIR}}/{{run_path}}
     stamp=$(date +%Y%m%d-%H%M%S)
