@@ -62,7 +62,7 @@ Example progression:
 
 **Phase numbers**:
 
-(Adapted from from [CCDS](https://cookiecutter-data-science.drivendata.org/using-the-template/))
+(Adapted from [CCDS](https://cookiecutter-data-science.drivendata.org/using-the-template/))
 
 - `0`: Exploration
 - `1`: Data cleaning/feature engineering
@@ -156,7 +156,11 @@ default:
     @just --list
 ```
 
-Ensure AWS profile is configured: `export AWS_PROFILE=broad-imaging`
+Create a `.env` file for project-specific environment variables (loaded by both the Justfile via `dotenv-load` and Python via `load_dotenv()`):
+
+```bash
+AWS_PROFILE=broad-imaging
+```
 
 #### 3. Create Directory Structure
 
@@ -246,7 +250,7 @@ data/**
 
 #### 5. Configure Code Quality Tools
 
-### Ruff Configuration
+#### Ruff Configuration
 
 Add to your `pyproject.toml`:
 
@@ -270,7 +274,7 @@ quote-style = "double"
 indent-style = "space"
 ```
 
-### Markdown Linting
+#### Markdown Linting
 
 Create `.markdownlint.yaml`:
 
@@ -673,6 +677,19 @@ dry:
     @{{SNAKEMAKE}} --cores {{CORES}} -n -p --scheduler greedy
 
 # ==================== DATA SYNC ====================
+
+# Download from original sources (admin — uses Pooch with hash verification)
+get-from-sources:
+    @echo "Getting data from original sources..."
+    @pixi run python -m <PROJECT_NAME>.downloading.download_data
+
+# Upload input data to team S3 (admin — makes S3 match local exactly)
+put-inputs:
+    @echo "Uploading input data to team S3..."
+    @echo "Syncing external/..."
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} "{{EXTERNAL_DIR}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/external/"
+    @echo "Syncing profiles/..."
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} "{{RAW_DIR}}/profiles/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/profiles/"
 
 # Get input data from team S3 (syncs local to match S3 exactly)
 get-inputs:
