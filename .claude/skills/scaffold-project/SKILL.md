@@ -11,6 +11,9 @@ allowed-tools: Bash, Read, Write, Glob, Grep, AskUserQuestion
 
 Automate the complete project setup described in workflows.md. This skill orchestrates the steps — **workflows.md is the source of truth for all template content**.
 
+> [!NOTE]
+> **Future direction**: Consider migrating to a Cookiecutter template as the canonical scaffold source, with a thin skill/script wrapper for interactive prompts and post-scaffold verification (`pixi install`, `snakemake` test, import check). The current approach avoids maintaining a separate template directory, but SKILL.md is itself a second source of truth — it encodes structure assumptions (heading names, step ordering, substitution rules) that break silently if workflows.md changes. A hybrid Cookiecutter + wrapper would give deterministic scaffolding while keeping the interactive verification steps.
+
 ## Arguments
 
 Parse `$ARGUMENTS` as: `<project-name> [s3-bucket] [aws-profile]`
