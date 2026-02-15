@@ -154,7 +154,8 @@ GitHub: feat/batch-correction   ←→  HF Hub: feat/batch-correction
 This means:
 
 - When you `git checkout -b feat/thing`, run `just branch-create` to create
-  the matching HF branch.
+  the matching HF branch. (This could be automated with a `post-checkout` git
+  hook — worth adding if people keep forgetting.)
 - `just put-results` always pushes to the HF branch matching your current git
   branch. It refuses to push if you're on `main` (use `put-results-main` or
   `pr-create` instead).
@@ -254,6 +255,15 @@ get-results-from branch:
     @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
     {{HF}} download {{HF_REPO}} --repo-type dataset \
       --revision {{branch}} \
+      --include "interim/**" --include "processed/**" \
+      --local-dir {{DATA_DIR}}
+
+# Download results from main (clean — deletes local files removed from remote)
+get-results-clean:
+    @echo "Clean-downloading results from {{HF_REPO}} (main)..."
+    rm -rf {{INTERIM_DIR}} {{PROCESSED_DIR}}
+    @mkdir -p {{INTERIM_DIR}} {{PROCESSED_DIR}}
+    {{HF}} download {{HF_REPO}} --repo-type dataset \
       --include "interim/**" --include "processed/**" \
       --local-dir {{DATA_DIR}}
 
@@ -428,12 +438,12 @@ just get-inputs
 just get-results
 ```
 
-**Note**: `hf download` adds and updates files but does not delete local files
-that were removed from the remote. If you need a clean state (e.g., after a
-teammate deleted stale results on main), delete the local directory first:
+**`hf download` does not delete local files removed from the remote.** If a
+teammate deletes stale results on main, your local copy silently keeps the old
+files. When in doubt, use the clean variant:
 
 ```bash
-rm -rf data/processed && just get-results
+just get-results-clean
 ```
 
 ### Start your day
@@ -516,7 +526,51 @@ kind of thing they support. Worth asking.
 
 ---
 
+## Trade-offs
+
+This proposal trades one set of problems for another. Worth being explicit
+about what we're taking on.
+
+**What HF Hub solves that S3 cannot**: versioning, branching, conflict
+prevention, audit trail, chunk-level dedup (Xet), web-browsable data and PRs.
+
+**What HF Hub introduces**:
+
+| Concern | Detail |
+| --- | --- |
+| Two version control systems | GitHub branches and HF branches must stay in sync. The Justfile handles this, but it's coordination that doesn't exist with a single-repo solution. |
+| `hf download` is additive | Downloads add/update files but never delete. If a teammate removes stale results on main, your local copy keeps the old files. Use `get-results-clean` for exact sync. |
+| Cost | $20/user/month vs $0 incremental on existing S3. For a 10-person lab this is $2,400/year. |
+| Vendor dependency | Data lives on HF infrastructure. If HF changes pricing, rate-limits, or goes away, migration is non-trivial. S3 data is under your control. |
+| 100k file limit per repo | Not an issue for profiles/metadata, but Cell Painting image datasets may require repo splitting or archive formats (WebDataset). |
+
+The daily workflow (`just get-results` / `just put-results`) absorbs most of
+this complexity. The risk is in the edge cases — stale local files, forgotten
+`branch-create`, cache bloat — not in the happy path.
+
+---
+
 ## FAQ
+
+**Why not DVC?**
+
+We tried it. The problems were daily-use friction, not conceptual:
+
+- **No browsing**: You cannot see what's in the remote without downloading it.
+  "What did the pipeline produce?" requires `dvc pull` and waiting.
+- **Five-step ceremony per commit**: `dvc add` → `git add *.dvc` → `git commit`
+  → `dvc push` → `git push`. Every time.
+- **Hooks slow everything down**: DVC installs git hooks to auto-stage `.dvc`
+  files. These run on every commit, even commits that don't touch data.
+- **File-level dedup only**: DVC re-uploads the entire file if a single byte
+  changes. For a 5 GB parquet file with one new column, that's 5 GB uploaded.
+  HF Hub's Xet storage does chunk-level dedup — only changed chunks transfer.
+- **Pipeline overlap**: DVC has its own pipeline system (`dvc.yaml`/`dvc.lock`)
+  that competes with Snakemake. You'd need to choose one or maintain both.
+
+DVC's `.dvc` pointer files do give you automatic branch-level data versioning
+(no `branch-create` needed). That's genuinely simpler. But the daily friction
+of hooks, ceremony, and inability to browse outweighed it.
 
 **Why not move everything to HF Hub and drop GitHub entirely?**
 
