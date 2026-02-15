@@ -11,14 +11,14 @@ repos:
     exclude: \.dvc$
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.3
+  rev: v0.15.0
   hooks:
   - id: ruff
     args: [--fix]
   - id: ruff-format
 
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.45.0
+  rev: v0.47.0
   hooks:
   - id: markdownlint
     args: [--fix]
