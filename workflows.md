@@ -684,6 +684,17 @@ get-results:
     AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/interim/" {{INTERIM_DIR}}/
     AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/" {{PROCESSED_DIR}}/
 
+# Upload specific analysis results to team S3
+put-results-for run_path:
+    @echo "Uploading results for: {{run_path}}"
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_COPY}} "{{PROCESSED_DIR}}/{{run_path}}/" ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/"
+
+# Download specific analysis results from team S3
+get-results-for run_path:
+    @echo "Getting results for: {{run_path}}"
+    @mkdir -p {{PROCESSED_DIR}}/{{run_path}}
+    AWS_PROFILE={{AWS_PROFILE}} {{RCLONE_SYNC}} ":s3:{{S3_BUCKET}}/{{S3_PROJECT_PATH}}/processed/{{run_path}}/" {{PROCESSED_DIR}}/{{run_path}}/
+
 # ==================== CODE QUALITY ====================
 
 # Run snakemake linting (filters conda/container warnings since we use pixi)
