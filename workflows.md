@@ -593,18 +593,6 @@ if __name__ == "__main__":
     main()
 ```
 
-Run downloads:
-
-```bash
-# Download all data from original sources (admin task)
-pixi run python -m <PROJECT_NAME>.downloading.download_data
-
-# Or use the Justfile
-just get-from-sources  # Downloads from original sources
-just put-inputs       # Uploads to team S3 (admin only)
-just get-inputs       # Downloads from team S3 (daily workflow)
-```
-
 #### Data Management Workflow
 
 **Admin (one-time setup):**
