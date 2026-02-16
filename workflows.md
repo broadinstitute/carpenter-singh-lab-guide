@@ -4,7 +4,10 @@
 > This workflow is being actively tested in our lab. Expect rough edges and please share feedback!
 
 > [!NOTE]
-> Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides. See [Design Decisions](#design-decisions) for why we chose this toolchain.
+> Dense documentation - see [README](README.md) for philosophy and links to comprehensive guides.
+
+> [!NOTE]
+> This guide is intentionally post-DVC. We tested DVC in this repo, but the overhead and slower versioning workflow were not worth it for daily use. We are still clarifying what should be versioned beyond code, so this guide keeps data movement and pipeline execution explicit with `just` + Snakemake + direct S3 tools (`rclone`/`s5cmd`).
 
 ## How We Organize Projects
 
@@ -746,14 +749,3 @@ list-s3:
 
 - <https://github.com/broadinstitute/jump_production>
 - <https://github.com/broadinstitute/2025_04_13_OASIS_CellPainting>
-
-### Design Decisions
-
-| Tool | Role | Why |
-| --- | --- | --- |
-| **Justfile** | Command interface | Simple `get`/`put`/`run` verbs; loads `.env`; no build-system baggage (vs Make) |
-| **Snakemake** | Pipeline execution | File-based DAG with `--dry-run`; incremental reruns; scales to cluster/cloud |
-| **rclone** | S3 sync | Checksum-based change detection avoids re-downloading unchanged files; `sync` and `copy` modes match download vs upload semantics |
-| **s5cmd** | S3 browsing | Fast parallel listing; simpler output than `aws s3 ls` |
-| **Pooch** | External downloads | SHA256 hash verification for non-S3 sources; caches by default |
-| **pixi** | Environment management | Conda + pip in one lockfile; required for GPU libraries (RAPIDS, CuPy, CUDA) and non-Python deps |
